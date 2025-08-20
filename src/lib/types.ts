@@ -1,3 +1,4 @@
+
 export interface Producer {
   id: string;
   name: string;
@@ -29,4 +30,14 @@ export interface Order {
   date: string;
   items: CartItem[];
   total: number;
+}
+
+export type UserRole = '農家' | '一般ユーザー' | '飲食店';
+
+export interface UserProfile {
+  uid: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  phoneNumber: string;
 }

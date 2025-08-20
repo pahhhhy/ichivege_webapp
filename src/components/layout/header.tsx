@@ -1,7 +1,8 @@
+
 'use client';
 
 import Link from 'next/link';
-import { Leaf, ShoppingCart, Menu, Sparkles, User, History } from 'lucide-react';
+import { Leaf, ShoppingCart, Menu, Sparkles, User, History, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/cart-context';
@@ -99,6 +100,12 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/signup">
+              <UserPlus className="mr-2 h-4 w-4" />
+              新規登録
+            </Link>
+          </Button>
           <Link href="/cart">
             <Button variant="ghost" size="icon" aria-label="カートを開く">
               <ShoppingCart className="h-5 w-5" />
