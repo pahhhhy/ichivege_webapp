@@ -31,39 +31,39 @@ export default function ProducerDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-headline text-4xl font-bold">
-            {producer.name} Dashboard
+            {producer.name} ダッシュボード
           </h1>
           <p className="text-lg text-muted-foreground">
-            Manage your products and view your sales.
+            商品を管理し、売上を表示します。
           </p>
         </div>
         <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Product
+          <PlusCircle className="mr-2 h-4 w-4" /> 新しい商品を追加
         </Button>
       </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <span className="text-muted-foreground">$</span>
+            <CardTitle className="text-sm font-medium">総収益</CardTitle>
+            <span className="text-muted-foreground">円</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
+            <div className="text-2xl font-bold">6,784,784円</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              先月から+20.1%
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Listings</CardTitle>
+            <CardTitle className="text-sm font-medium">出品中の商品</CardTitle>
             <span className="text-muted-foreground">#</span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{producerProducts.length}</div>
             <p className="text-xs text-muted-foreground">
-              Your currently listed products
+              現在出品中の商品
             </p>
           </CardContent>
         </Card>
@@ -71,9 +71,9 @@ export default function ProducerDashboard() {
 
       <Card className="mt-8">
         <CardHeader>
-          <CardTitle>Your Products</CardTitle>
+          <CardTitle>あなたの製品</CardTitle>
           <CardDescription>
-            An overview of your current vegetable listings.
+            現在の野菜の出品状況の概要です。
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -81,13 +81,13 @@ export default function ProducerDashboard() {
             <TableHeader>
               <TableRow>
                 <TableHead className="hidden w-[100px] sm:table-cell">
-                  <span className="sr-only">Image</span>
+                  <span className="sr-only">画像</span>
                 </TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Price</TableHead>
+                <TableHead>名前</TableHead>
+                <TableHead>ステータス</TableHead>
+                <TableHead>価格</TableHead>
                 <TableHead>
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">アクション</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -106,11 +106,11 @@ export default function ProducerDashboard() {
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>
-                    <Badge variant={product.availability === 'In Stock' ? 'outline' : 'destructive'}>
+                    <Badge variant={product.availability === '在庫あり' ? 'outline' : 'destructive'}>
                       {product.availability}
                     </Badge>
                   </TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>{product.price.toFixed(0)}円</TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       <Button variant="ghost" size="icon">

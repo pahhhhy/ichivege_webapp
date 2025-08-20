@@ -8,13 +8,13 @@ export default function RecommendationsPage() {
       <div className="text-center">
         <Sparkles className="mx-auto h-12 w-12 text-primary" />
         <h1 className="font-headline mt-4 text-4xl font-bold">
-          Vegetable Recommender
+          野菜のおすすめ
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          Let our AI help you discover your next favorite vegetable!
+          AIがあなたの次のお気に入りの野菜を見つけるお手伝いをします！
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Select some of your past purchases and we'll suggest something new and in-season.
+          過去に購入したものをいくつか選択してください。旬の新しいものをお勧めします。
         </p>
       </div>
 

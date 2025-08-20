@@ -10,13 +10,13 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  currency: string;
+  currency: 'USD' | 'JPY';
   image: string;
-  category: 'Leafy Green' | 'Root' | 'Cruciferous' | 'Fruit';
+  category: '葉物野菜' | '根菜' | 'アブラナ科' | '果菜';
   producerId: string;
   origin: string;
-  farmingMethod: 'Organic' | 'Conventional' | 'Hydroponic';
-  availability: 'In Stock' | 'Out of Stock';
+  farmingMethod: '有機栽培' | '慣行栽培' | '水耕栽培';
+  availability: '在庫あり' | '在庫切れ';
   dataAiHint?: string;
 }
 
