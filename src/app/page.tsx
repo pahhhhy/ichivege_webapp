@@ -31,7 +31,7 @@ export default function Home({
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8 text-center">
-        <h1 className="font-headline text-4xl font-bold text-primary-foreground/90 md:text-5xl">
+        <h1 className="font-headline text-4xl font-bold text-primary md:text-5xl">
           農場から新鮮な野菜を
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
