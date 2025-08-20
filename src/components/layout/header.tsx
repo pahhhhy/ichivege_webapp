@@ -11,10 +11,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
-  { href: '/', label: 'Browse', icon: Leaf },
-  { href: '/recommendations', label: 'Recommendations', icon: Sparkles },
-  { href: '/orders', label: 'Order History', icon: History },
-  { href: '/producer/dashboard', label: 'For Producers', icon: User },
+  { href: '/', label: '商品一覧', icon: Leaf },
+  { href: '/recommendations', label: 'おすすめ', icon: Sparkles },
+  { href: '/orders', label: '注文履歴', icon: History },
+  { href: '/producer/dashboard', label: '生産者向け', icon: User },
 ];
 
 export function Header() {
@@ -50,7 +50,7 @@ export function Header() {
         <div className="flex flex-col gap-4 py-4">
           <Link href="/" className="mb-4 flex items-center gap-2">
             <Leaf className="h-6 w-6 text-primary" />
-            <span className="font-bold">VeggieConnect</span>
+            <span className="font-bold">ICHIVEGE</span>
           </Link>
           {navLinks.map((link) => (
             <Link
@@ -78,14 +78,14 @@ export function Header() {
         <div className="flex items-center gap-6">
           <Link href="/" className="hidden items-center gap-2 md:flex">
             <Leaf className="h-6 w-6 text-primary" />
-            <span className="font-bold">VeggieConnect</span>
+            <span className="font-bold">ICHIVEGE</span>
           </Link>
           {isMobile ? mobileNav : mainNav}
         </div>
 
         <div className="flex items-center gap-4">
           <Link href="/cart">
-            <Button variant="ghost" size="icon" aria-label="Open cart">
+            <Button variant="ghost" size="icon" aria-label="カートを開く">
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
                 <Badge className="absolute right-0 top-0 -translate-y-1/2 translate-x-1/2 transform px-2">

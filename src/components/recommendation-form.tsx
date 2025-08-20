@@ -23,10 +23,10 @@ function SubmitButton() {
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Thinking...
+          考え中...
         </>
       ) : (
-        'Get Recommendations'
+        'おすすめを取得'
       )}
     </Button>
   );
@@ -41,7 +41,7 @@ async function formAction(
     if (pastPurchases.length === 0) {
       return {
         ...initialState,
-        error: 'Please select at least one past purchase.',
+        error: '過去の購入品を1つ以上選択してください。',
       };
     }
     const seasonalAvailability = formData.getAll('seasonalAvailability') as string[];
@@ -50,7 +50,7 @@ async function formAction(
   } catch (e) {
     return {
       ...initialState,
-      error: 'An unexpected error occurred. Please try again.',
+      error: '予期せぬエラーが発生しました。もう一度お試しください。',
     };
   }
 }
@@ -66,7 +66,7 @@ export function RecommendationForm({
   const [selectedPurchases, setSelectedPurchases] = useState<string[]>([]);
   
   useEffect(() => {
-    // pre-select some options for demo
+    // デモ用にいくつかのオプションを事前に選択
     setSelectedPurchases(purchaseOptions.slice(0, 2));
   }, [purchaseOptions]);
 
@@ -79,20 +79,20 @@ export function RecommendationForm({
   return (
     <div className="mt-8">
       <form action={action}>
-        {/* Hidden inputs to pass all seasonal veggies to the AI */}
+        {/* すべての旬の野菜をAIに渡すための隠し入力 */}
         {seasonalOptions.map(veg => (
             <input type="hidden" name="seasonalAvailability" value={veg} key={`hidden-${veg}`} />
         ))}
 
         <Card>
           <CardHeader>
-            <CardTitle>Tell us what you like</CardTitle>
+            <CardTitle>あなたの好みを教えてください</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6">
               <div>
-                <Label className="text-base font-semibold">Your Past Purchases</Label>
-                <p className="text-sm text-muted-foreground mb-4">Select a few vegetables you've enjoyed before.</p>
+                <Label className="text-base font-semibold">過去の購入品</Label>
+                <p className="text-sm text-muted-foreground mb-4">以前に楽しんだ野菜をいくつか選択してください。</p>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                   {purchaseOptions.map((veg) => (
                     <div key={veg} className="flex items-center space-x-2">
@@ -117,18 +117,18 @@ export function RecommendationForm({
       {state.error && (
         <Alert variant="destructive" className="mt-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>エラー</AlertTitle>
           <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       )}
 
       {state.recommendations.length > 0 && (
         <div className="mt-8 space-y-6">
-          <h2 className="text-center text-2xl font-bold">Our Recommendations For You</h2>
+          <h2 className="text-center text-2xl font-bold">あなたへのおすすめ</h2>
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>Try these next!</CardTitle>
+                    <CardTitle>次はこちらをお試しください！</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                     {state.recommendations.map((veg) => (
@@ -141,7 +141,7 @@ export function RecommendationForm({
             </Card>
             <Card className="bg-secondary">
                 <CardHeader>
-                    <CardTitle>Why you'll love them</CardTitle>
+                    <CardTitle>気に入る理由</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-secondary-foreground">{state.reasoning}</p>

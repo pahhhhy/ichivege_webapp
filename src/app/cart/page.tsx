@@ -23,14 +23,14 @@ export default function CartPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="font-headline mb-8 text-center text-4xl font-bold">
-        Your Shopping Cart
+        ショッピングカート
       </h1>
       {cartItems.length === 0 ? (
         <div className="text-center">
           <ShoppingCart className="mx-auto h-24 w-24 text-muted-foreground" />
-          <p className="mt-4 text-xl text-muted-foreground">Your cart is empty.</p>
+          <p className="mt-4 text-xl text-muted-foreground">カートは空です。</p>
           <Button asChild className="mt-6">
-            <Link href="/">Start Shopping</Link>
+            <Link href="/">お買い物を始める</Link>
           </Button>
         </div>
       ) : (
@@ -41,10 +41,10 @@ export default function CartPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[100px] hidden md:table-cell">Image</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead className="text-center">Quantity</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="w-[100px] hidden md:table-cell">画像</TableHead>
+                      <TableHead>商品</TableHead>
+                      <TableHead className="text-center">数量</TableHead>
+                      <TableHead className="text-right">価格</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -63,7 +63,7 @@ export default function CartPage() {
                         </TableCell>
                         <TableCell className="font-medium">
                           <Link href={`/product/${item.id}`} className="hover:underline">{item.name}</Link>
-                          <div className="text-sm text-muted-foreground">${item.price.toFixed(2)} each</div>
+                          <div className="text-sm text-muted-foreground">{item.price.toFixed(0)}円/個</div>
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center">
@@ -79,7 +79,7 @@ export default function CartPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          {(item.price * item.quantity).toFixed(0)}円
                         </TableCell>
                         <TableCell>
                           <Button
@@ -97,33 +97,33 @@ export default function CartPage() {
               </CardContent>
             </Card>
             <Button variant="outline" onClick={clearCart} className="mt-4">
-              Clear Cart
+              カートを空にする
             </Button>
           </div>
 
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+                <CardTitle>注文概要</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>小計</span>
+                  <span>{cartTotal.toFixed(0)}円</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Shipping</span>
-                  <span>Calculated at checkout</span>
+                  <span>送料</span>
+                  <span>レジで計算されます</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>合計</span>
+                  <span>{cartTotal.toFixed(0)}円</span>
                 </div>
               </CardContent>
               <CardFooter>
                 <Button className="w-full" size="lg">
-                  Proceed to Checkout
+                  レジに進む
                 </Button>
               </CardFooter>
             </Card>

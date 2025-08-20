@@ -32,23 +32,23 @@ export default function Home({
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8 text-center">
         <h1 className="font-headline text-4xl font-bold text-primary-foreground/90 md:text-5xl">
-          Fresh from the Farm
+          農場から新鮮な野菜を
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          Browse our selection of locally sourced vegetables.
+          地元で採れた野菜のセレクションをご覧ください。
         </p>
       </header>
 
       <div className="mb-6 flex items-center justify-end">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Filter by category:</span>
+          <span className="text-sm font-medium">カテゴリーで絞り込む:</span>
           <Select defaultValue={category}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder="カテゴリー" />
             </SelectTrigger>
             <SelectContent>
               <Link href="/">
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">すべて</SelectItem>
               </Link>
               {categories.map((cat) => (
                 <Link href={`/?category=${cat.toLowerCase()}`} key={cat}>

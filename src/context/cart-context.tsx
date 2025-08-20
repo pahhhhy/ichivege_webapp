@@ -33,8 +33,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return [...prevItems, { ...product, quantity: 1 }];
     });
     toast({
-      title: 'Added to cart!',
-      description: `${product.name} is now in your shopping cart.`,
+      title: 'カートに追加しました！',
+      description: `${product.name} がショッピングカートに入りました。`,
     });
   };
 
@@ -86,7 +86,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 export const useCart = () => {
   const context = useContext(CartContext);
   if (context === undefined) {
-    throw new Error('useCart must be used within a CartProvider');
+    throw new Error('useCartはCartProviderの中で使用する必要があります');
   }
   return context;
 };

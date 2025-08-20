@@ -38,9 +38,9 @@ export function ProductCard({ product }: ProductCardProps) {
         </CardContent>
         <CardFooter className="flex items-center justify-between p-4 pt-0">
           <p className="text-lg font-semibold text-primary">
-            ${product.price.toFixed(2)}
+            {product.price.toFixed(0)}円
           </p>
-          <Badge variant={product.availability === 'In Stock' ? 'secondary' : 'destructive'}>
+          <Badge variant={product.availability === '在庫あり' ? 'secondary' : 'destructive'}>
             {product.availability}
           </Badge>
         </CardFooter>
