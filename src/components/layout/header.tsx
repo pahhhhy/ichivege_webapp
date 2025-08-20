@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import dynamic from 'next/dynamic';
 
 const navLinks = [
   { href: '/', label: '商品一覧', icon: Leaf },
@@ -17,12 +18,9 @@ const navLinks = [
   { href: '/producer/dashboard', label: '生産者向け', icon: User },
 ];
 
-export function Header() {
-  const { cartCount } = useCart();
-  const isMobile = useIsMobile();
+function MainNav() {
   const pathname = usePathname();
-
-  const mainNav = (
+  return (
     <nav className="flex items-center gap-4 lg:gap-6">
       {navLinks.map((link) => (
         <Link
@@ -38,8 +36,11 @@ export function Header() {
       ))}
     </nav>
   );
+}
 
-  const mobileNav = (
+function MobileNav() {
+  const pathname = usePathname();
+  return (
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="outline" size="icon">
@@ -71,6 +72,20 @@ export function Header() {
       </SheetContent>
     </Sheet>
   );
+}
+
+function Navigation() {
+  const isMobile = useIsMobile();
+  if (isMobile === undefined) {
+    return null;
+  }
+  return isMobile ? <MobileNav /> : <MainNav />;
+}
+
+const DynamicNavigation = dynamic(() => Promise.resolve(Navigation), { ssr: false });
+
+export function Header() {
+  const { cartCount } = useCart();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -80,7 +95,7 @@ export function Header() {
             <Leaf className="h-6 w-6 text-primary" />
             <span className="font-bold">ICHIVEGE</span>
           </Link>
-          {isMobile ? mobileNav : mainNav}
+          <DynamicNavigation />
         </div>
 
         <div className="flex items-center gap-4">
