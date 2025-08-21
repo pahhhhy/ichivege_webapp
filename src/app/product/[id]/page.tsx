@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { products, producers } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/cart-context';
@@ -13,16 +12,77 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Product, Producer } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function ProductPageSkeleton() {
+    return (
+        <div className="container mx-auto max-w-4xl px-4 py-12">
+            <div className="grid gap-8 md:grid-cols-2">
+                <Skeleton className="h-96 w-full rounded-lg" />
+                <div className="flex flex-col justify-center space-y-4">
+                    <Skeleton className="h-10 w-3/4" />
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-20 w-full" />
+                    <div className="flex flex-wrap items-center gap-4">
+                        <Skeleton className="h-8 w-24" />
+                        <Skeleton className="h-8 w-24" />
+                        <Skeleton className="h-8 w-24" />
+                    </div>
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </div>
+            <div className="mt-12">
+                <Skeleton className="h-48 w-full" />
+            </div>
+        </div>
+    )
+}
+
 
 export default function ProductPage({ params }: { params: { id: string } }) {
-  const product = products.find((p) => p.id === params.id);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [producer, setProducer] = useState<Producer | null>(null);
+  const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
 
-  if (!product) {
-    notFound();
+  useEffect(() => {
+    const fetchProduct = async () => {
+        setLoading(true);
+        const productDocRef = doc(db, 'products', params.id);
+        const productDoc = await getDoc(productDocRef);
+
+        if (productDoc.exists()) {
+            const productData = { id: productDoc.id, ...productDoc.data() } as Product;
+            setProduct(productData);
+
+            if (productData.producerId) {
+                const producerDocRef = doc(db, 'users', productData.producerId);
+                const producerDoc = await getDoc(producerDocRef);
+                if (producerDoc.exists()) {
+                    setProducer(producerDoc.data() as Producer);
+                }
+            }
+        } else {
+            notFound();
+        }
+        setLoading(false);
+    }
+    fetchProduct();
+  }, [params.id]);
+
+
+  if (loading) {
+    return <ProductPageSkeleton />;
   }
 
-  const producer = producers.find((p) => p.id === product.producerId);
+  if (!product) {
+    return notFound();
+  }
+  
   const availability = product.stock > 0 ? '在庫あり' : '在庫切れ';
 
   return (
