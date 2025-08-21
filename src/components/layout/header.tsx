@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Leaf, ShoppingCart, Menu, User, History, UserPlus, LogIn, LogOut, UserCircle, PlusCircle, Megaphone } from 'lucide-react';
+import { Leaf, ShoppingCart, Menu, User, History, UserPlus, LogIn, LogOut, UserCircle, PlusCircle, Megaphone, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/cart-context';
@@ -27,6 +27,7 @@ const navLinks = [
   { href: '/', label: '商品一覧', icon: Leaf },
   { href: '/orders', label: '注文履歴', icon: History },
   { href: '/board', label: 'お知らせ', icon: Megaphone },
+  { href: '/chat', label: 'チャット', icon: MessageSquare },
 ];
 
 function MainNav() {
@@ -39,7 +40,7 @@ function MainNav() {
           href={link.href}
           className={cn(
             'text-sm font-medium transition-colors hover:text-primary',
-            pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+            pathname.startsWith(link.href) && link.href !== '/' || pathname === link.href ? 'text-primary' : 'text-muted-foreground'
           )}
         >
           {link.label}
@@ -73,7 +74,7 @@ function MobileNav() {
               onClick={() => setIsOpen(false)}
               className={cn(
                 'flex items-center gap-3 rounded-md p-2 text-lg font-medium transition-colors hover:bg-accent',
-                pathname === link.href
+                pathname.startsWith(link.href) && link.href !== '/' || pathname === link.href
                   ? 'bg-accent text-primary'
                   : 'text-foreground'
               )}

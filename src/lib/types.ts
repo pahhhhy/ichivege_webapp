@@ -74,3 +74,24 @@ export interface Post {
   authorName: string;
   createdAt: any; // Firestore Timestamp
 }
+
+export interface ChatParticipant {
+    uid: string;
+    username: string;
+}
+
+export interface ChatRoom {
+    id: string;
+    participants: ChatParticipant[];
+    participantUids: string[];
+    createdAt: any; // Firestore Timestamp
+    lastMessage: string;
+    lastMessageAt: any; // Firestore Timestamp
+}
+
+export interface Message {
+    id: string;
+    text: string;
+    senderId: string;
+    createdAt: any; // Firestore Timestamp
+}
