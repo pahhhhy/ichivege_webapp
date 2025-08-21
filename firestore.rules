@@ -2,19 +2,14 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ユーザーは自分自身のプロフィールのみ読み書きできます。
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // 認証済みのユーザーは商品を読み取ることができ、
-    // 認証済みのユーザーは商品を作成できます。
     match /products/{productId} {
-      allow read: if request.auth != null;
+      allow read: if true;
       allow create: if request.auth != null;
-      // You might want to add update/delete rules here later,
-      // for example, only allowing the producer who created the product to edit it.
-      // allow update, delete: if request.auth.uid == resource.data.producerId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.producerId;
     }
   }
 }
