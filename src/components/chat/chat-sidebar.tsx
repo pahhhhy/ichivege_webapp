@@ -36,17 +36,17 @@ const useUnreadCounts = (chatRooms: ChatRoom[], userId: string) => {
         
         const q = query(
           collection(db, 'chats', room.id, 'messages'),
-          where('createdAt', '>', lastReadTimestamp)
+          where('createdAt', '>', lastReadTimestamp),
+          where('senderId', '!=', userId)
         );
   
         return onSnapshot(q, (snapshot) => {
-          // Count messages not sent by the current user
-          const unreadCount = snapshot.docs.filter(doc => doc.data().senderId !== userId).length;
-          
           setUnreadCounts(prevCounts => ({
             ...prevCounts,
-            [room.id]: unreadCount
+            [room.id]: snapshot.size
           }));
+        }, (error) => {
+            console.error(`Error fetching unread count for room ${room.id}:`, error);
         });
       });
   
