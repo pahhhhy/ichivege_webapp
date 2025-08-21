@@ -114,7 +114,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>送料</span>
-                  <span>レジで計算されます</span>
+                  <span>無料</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
@@ -123,8 +123,8 @@ export default function CartPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" size="lg">
-                  レジに進む
+                <Button asChild className="w-full" size="lg" disabled={cartItems.length === 0}>
+                  <Link href="/checkout">レジに進む</Link>
                 </Button>
               </CardFooter>
             </Card>
