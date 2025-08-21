@@ -11,14 +11,12 @@ import {
   collection,
   runTransaction,
   doc,
-  getDoc,
   writeBatch,
   serverTimestamp,
-  addDoc,
   getDocs,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { CartItem, Product } from '@/lib/types';
+import type { Product } from '@/lib/types';
 
 const CreateOrderInputSchema = z.object({
   userId: z.string().describe('The ID of the user placing the order.'),
@@ -54,9 +52,9 @@ const createOrderFlow = ai.defineFlow(
     }
 
     try {
-      // Use a transaction to ensure atomicity
+      // Use a transaction to ensure atomicity for order creation and stock update
       const orderId = await runTransaction(db, async (transaction) => {
-        // 1. Verify stock for all items
+        // 1. Verify stock and prepare updates for all items
         for (const item of cartItems) {
           const productRef = doc(db, 'products', item.id);
           const productDoc = await transaction.get(productRef);
@@ -67,6 +65,7 @@ const createOrderFlow = ai.defineFlow(
           if (productData.stock < item.quantity) {
             throw new Error(`在庫不足: ${item.name}`);
           }
+           // Defer the stock update until all items are verified
         }
 
         // 2. Create the order document
@@ -82,19 +81,25 @@ const createOrderFlow = ai.defineFlow(
           image: item.image,
           dataAiHint: item.dataAiHint,
         }));
-
-        const orderRef = await addDoc(collection(db, 'orders'), {
+        
+        // Create a new order document reference with an auto-generated ID
+        const orderRef = doc(collection(db, 'orders'));
+        
+        transaction.set(orderRef, {
           userId,
           orderItems,
           totalAmount,
           status: '処理中',
           orderDate: serverTimestamp(),
+          id: orderRef.id
         });
-        
+
         // 3. Update stock for each product
         for (const item of cartItems) {
           const productRef = doc(db, 'products', item.id);
-          const productDoc = await transaction.get(productRef);
+          // We need to re-fetch inside the transaction for the read-after-write rule,
+          // but we can just calculate the new stock.
+          const productDoc = await transaction.get(productRef); // Re-get for safety
           const newStock = productDoc.data()!.stock - item.quantity;
           transaction.update(productRef, { stock: newStock });
         }
@@ -102,7 +107,7 @@ const createOrderFlow = ai.defineFlow(
         return orderRef.id;
       });
 
-      // 4. Clear the user's cart (outside of the transaction)
+      // 4. Clear the user's cart (outside of the transaction, after it succeeds)
       const cartCollectionRef = collection(db, 'users', userId, 'cart');
       const cartSnapshot = await getDocs(cartCollectionRef);
       const batch = writeBatch(db);
@@ -113,9 +118,9 @@ const createOrderFlow = ai.defineFlow(
 
       return orderId;
     } catch (error) {
-      console.error('Transaction failed: ', error);
+      console.error('Order processing failed: ', error);
       if (error instanceof Error) {
-        throw error;
+        throw error; // Re-throw the original error to be caught by the UI
       }
       throw new Error('注文処理中に不明なエラーが発生しました。');
     }
