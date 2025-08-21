@@ -27,11 +27,10 @@ import {
   BarChart,
   CartesianGrid,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
-import { ChartTooltipContent, ChartContainer } from '@/components/ui/chart';
+import { ChartTooltipContent, ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, Package, ShoppingBag, Users } from 'lucide-react';
 import { format } from 'date-fns';
@@ -44,6 +43,7 @@ type DailySales = {
 const chartConfig = {
     total: {
       label: '売上',
+      color: 'hsl(var(--primary))',
     },
   };
 
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                   width={80}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="total" fill="var(--color-total, hsl(var(--primary)))" radius={4} />
+                <Bar dataKey="total" fill="var(--color-total)" radius={4} />
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -313,5 +313,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
