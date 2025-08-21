@@ -3,9 +3,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
+      // ログインユーザーは他のユーザーの情報を読めるが、書き込めるのは自分自身の情報のみ
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId;
 
+      // ユーザーは自分自身のカート情報のみ読み書き、削除できる
       match /cart/{cartItemId} {
         allow read, write, delete: if request.auth != null && request.auth.uid == userId;
       }
@@ -13,17 +15,25 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read: if true;
-      allow create: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.producerId == request.auth.uid;
       
-      // Allow any authenticated user to update (for stock changes during order)
-      // but only the producer to delete or change other fields.
-      // A more secure rule would separate stock updates into a separate write permission.
-      allow update: if request.auth != null; 
-      allow delete: if request.auth != null && request.auth.uid == resource.data.producerId;
+      // 在庫の更新は認証ユーザーなら誰でも可能 (注文処理のため)
+      // その他の項目は生産者のみが更新可能
+      allow update: if request.auth != null && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])) ||
+        (resource.data.producerId == request.auth.uid)
+      );
+        
+      allow delete: if request.auth != null && resource.data.producerId == request.auth.uid;
     }
 
     match /orders/{orderId} {
-        allow read, create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+        // ユーザーは自分の注文を作成できる
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        // ユーザーは自分の注文のみを読み取れる
+        allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+        // 注文の更新・削除は許可しない (例)
+        allow update, delete: if false;
     }
   }
 }
