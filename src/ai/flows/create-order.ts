@@ -14,6 +14,7 @@ import {
   writeBatch,
   serverTimestamp,
   getDocs,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Product } from '@/lib/types';
@@ -54,12 +55,13 @@ const createOrderFlow = ai.defineFlow(
     try {
       // Use a transaction to ensure atomicity for order creation and stock update
       const orderId = await runTransaction(db, async (transaction) => {
-        // 1. READ phase: Verify stock for all items first.
+        // 1. READ phase: Verify stock for all items first and get producer IDs.
         const productsToUpdate: {
           ref: any;
           currentStock: number;
           quantityToDecrement: number;
         }[] = [];
+        const orderItemsWithProducer = [];
 
         for (const item of cartItems) {
           const productRef = doc(db, 'products', item.id);
@@ -76,6 +78,16 @@ const createOrderFlow = ai.defineFlow(
             currentStock: productData.stock,
             quantityToDecrement: item.quantity,
           });
+
+          orderItemsWithProducer.push({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+            dataAiHint: item.dataAiHint,
+            producerId: productData.producerId, // Add producerId here
+          });
         }
 
         // 2. WRITE phase: After all reads are done, perform all writes.
@@ -85,21 +97,13 @@ const createOrderFlow = ai.defineFlow(
           (sum, item) => sum + item.price * item.quantity,
           0
         );
-        const orderItems = cartItems.map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
-          dataAiHint: item.dataAiHint,
-        }));
 
         // Create a new order document reference with an auto-generated ID
         const orderRef = doc(collection(db, 'orders'));
 
         transaction.set(orderRef, {
           userId,
-          orderItems,
+          orderItems: orderItemsWithProducer, // Use the new array with producerId
           totalAmount,
           status: '処理中',
           orderDate: serverTimestamp(),

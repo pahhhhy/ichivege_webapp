@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Leaf, ShoppingCart, Menu, User, History, UserPlus, LogIn, LogOut, UserCircle, PlusCircle, Megaphone, MessageSquare } from 'lucide-react';
+import { Leaf, ShoppingCart, Menu, User, History, UserPlus, LogIn, LogOut, UserCircle, PlusCircle, Megaphone, MessageSquare, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/cart-context';
@@ -142,12 +142,20 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 {userProfile?.role === '農家' && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/products/new">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      <span>新しい商品を追加</span>
-                    </Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>ダッシュボード</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/products/new">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        <span>新しい商品を追加</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
