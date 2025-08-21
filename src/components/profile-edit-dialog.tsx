@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, UserCog } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
@@ -40,6 +41,10 @@ const formSchema = z.object({
   phoneNumber: z.string().min(10, '有効な電話番号を入力してください。'),
   postalCode: z.string().regex(/^[0-9]{7}$/, '郵便番号は7桁の数字で入力してください。'),
   address: z.string().min(5, '住所は5文字以上で入力してください。'),
+  // Producer specific fields - optional
+  name: z.string().optional(),
+  location: z.string().optional(),
+  bio: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -56,6 +61,9 @@ export function ProfileEditDialog({ userProfile, onUpdate }: ProfileEditDialogPr
       phoneNumber: userProfile.phoneNumber || '',
       postalCode: userProfile.postalCode || '',
       address: userProfile.address || '',
+      name: userProfile.name || '',
+      location: userProfile.location || '',
+      bio: userProfile.bio || '',
     },
   });
 
@@ -91,7 +99,7 @@ export function ProfileEditDialog({ userProfile, onUpdate }: ProfileEditDialogPr
           ユーザー設定
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>プロフィールを編集</DialogTitle>
           <DialogDescription>
@@ -152,6 +160,51 @@ export function ProfileEditDialog({ userProfile, onUpdate }: ProfileEditDialogPr
                 </FormItem>
               )}
             />
+
+            {userProfile.role === '農家' && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>生産者名</FormLabel>
+                      <FormControl>
+                        <Input placeholder="〇〇ファーム" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>活動場所</FormLabel>
+                      <FormControl>
+                        <Input placeholder="〇〇県〇〇市" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>自己紹介</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="農園のこだわりや自己紹介を記入してください。" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+
             <DialogFooter>
                 <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
