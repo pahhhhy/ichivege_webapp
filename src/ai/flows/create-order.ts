@@ -11,8 +11,6 @@ import { adminDb } from '@/lib/firebase-admin'; // Use Admin SDK
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Product } from '@/lib/types';
 // Removed unused client-side imports
-// import { getDocs, collection } from 'firebase/firestore';
-// import { db } from '@/lib/firebase'; // Client SDK for clearing cart
 
 const CreateOrderInputSchema = z.object({
   userId: z.string().describe('The ID of the user placing the order.'),
@@ -75,9 +73,10 @@ const createOrderFlow = ai.defineFlow(
             currentStock: productData.stock,
             quantityToDecrement: item.quantity,
           });
+          // Add producerId to the order item
           orderItemsWithProducer.push({
             ...item,
-            producerId: productData.producerId,
+            producerId: productData.producerId, 
           });
         }
 
