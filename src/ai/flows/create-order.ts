@@ -2,22 +2,16 @@
 'use server';
 
 /**
- * @fileOverview Creates an order, updates stock, and clears the user's cart.
+ * @fileOverview Creates an order using the Firebase Admin SDK, updates stock, and clears the user's cart.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import {
-  collection,
-  runTransaction,
-  doc,
-  writeBatch,
-  serverTimestamp,
-  getDocs,
-  getDoc,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin'; // Use Admin SDK
+import { FieldValue } from 'firebase-admin/firestore';
 import type { Product } from '@/lib/types';
+import { getDocs, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase'; // Client SDK for clearing cart
 
 const CreateOrderInputSchema = z.object({
   userId: z.string().describe('The ID of the user placing the order.'),
@@ -53,60 +47,52 @@ const createOrderFlow = ai.defineFlow(
     }
 
     try {
-      // Use a transaction to ensure atomicity for order creation and stock update
-      const orderId = await runTransaction(db, async (transaction) => {
-        // 1. READ phase: Verify stock for all items first and get producer IDs.
+      // Use an admin transaction to ensure atomicity
+      const orderId = await adminDb.runTransaction(async (transaction) => {
         const productsToUpdate: {
-          ref: any;
+          ref: FirebaseFirestore.DocumentReference;
           currentStock: number;
           quantityToDecrement: number;
         }[] = [];
         const orderItemsWithProducer = [];
 
+        // 1. READ phase: Verify stock for all items using admin transaction
         for (const item of cartItems) {
-          const productRef = doc(db, 'products', item.id);
+          const productRef = adminDb.collection('products').doc(item.id);
           const productDoc = await transaction.get(productRef);
-          if (!productDoc.exists()) {
+          if (!productDoc.exists) {
             throw new Error(`商品が見つかりません: ${item.name}`);
           }
           const productData = productDoc.data() as Product;
           if (productData.stock < item.quantity) {
-            throw new Error(`在庫不足: ${item.name} (現在の在庫: ${productData.stock})`);
+            throw new Error(
+              `在庫不足: ${item.name} (現在の在庫: ${productData.stock})`
+            );
           }
           productsToUpdate.push({
             ref: productRef,
             currentStock: productData.stock,
             quantityToDecrement: item.quantity,
           });
-
           orderItemsWithProducer.push({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            image: item.image,
-            dataAiHint: item.dataAiHint,
-            producerId: productData.producerId, // Add producerId here
+            ...item,
+            producerId: productData.producerId,
           });
         }
 
-        // 2. WRITE phase: After all reads are done, perform all writes.
-
-        // Create the order document
+        // 2. WRITE phase
         const totalAmount = cartItems.reduce(
           (sum, item) => sum + item.price * item.quantity,
           0
         );
-
-        // Create a new order document reference with an auto-generated ID
-        const orderRef = doc(collection(db, 'orders'));
+        const orderRef = adminDb.collection('orders').doc(); // Auto-generate ID
 
         transaction.set(orderRef, {
           userId,
-          orderItems: orderItemsWithProducer, // Use the new array with producerId
+          orderItems: orderItemsWithProducer,
           totalAmount,
           status: '処理中',
-          orderDate: serverTimestamp(),
+          orderDate: FieldValue.serverTimestamp(),
           id: orderRef.id,
         });
 
@@ -119,12 +105,13 @@ const createOrderFlow = ai.defineFlow(
         return orderRef.id;
       });
 
-      // 3. Clear the user's cart (outside of the transaction, after it succeeds)
+      // 3. Clear the user's cart (using client SDK as it's a client-side action context)
+      // This is safe to do after the transaction succeeds.
       const cartCollectionRef = collection(db, 'users', userId, 'cart');
       const cartSnapshot = await getDocs(cartCollectionRef);
-      const batch = writeBatch(db);
+      const batch = adminDb.batch(); // Use admin batch
       cartSnapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
+        batch.delete(adminDb.collection('users').doc(userId).collection('cart').doc(doc.id));
       });
       await batch.commit();
 
@@ -132,7 +119,11 @@ const createOrderFlow = ai.defineFlow(
     } catch (error) {
       console.error('Order processing failed: ', error);
       if (error instanceof Error) {
-        throw error; // Re-throw the original error to be caught by the UI
+        // Re-throw specific, user-friendly messages
+        if (error.message.includes('在庫不足') || error.message.includes('商品が見つかりません')) {
+            throw error;
+        }
+        throw new Error('注文処理中にサーバーエラーが発生しました。');
       }
       throw new Error('注文処理中に不明なエラーが発生しました。');
     }
