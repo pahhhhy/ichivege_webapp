@@ -31,7 +31,7 @@ const formSchema = z.object({
   name: z.string().min(2, '名前は2文字以上で入力してください。'),
   category: z.enum(['葉物野菜', '根菜', 'アブラナ科', '果菜']),
   price: z.coerce.number().min(0, '価格は0以上で入力してください。'),
-  availability: z.enum(['在庫あり', '在庫切れ']),
+  stock: z.coerce.number().min(0, '在庫数は0以上で入力してください。'),
   description: z.string().min(10, '詳細は10文字以上で入力してください。').max(500),
 });
 
@@ -48,7 +48,7 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
       name: '',
       category: '葉物野菜',
       price: 0,
-      availability: '在庫あり',
+      stock: 0,
       description: '',
     },
   });
@@ -57,6 +57,7 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
     try {
       await addDoc(collection(db, 'products'), {
         ...values,
+        availability: values.stock > 0 ? '在庫あり' : '在庫切れ',
         producerId: producerId,
         currency: 'JPY',
         image: 'https://placehold.co/600x400.png', // Placeholder image
@@ -136,21 +137,13 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
         />
         <FormField
           control={form.control}
-          name="availability"
+          name="stock"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>在庫状況</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="在庫状況を選択" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="在庫あり">在庫あり</SelectItem>
-                  <SelectItem value="在庫切れ">在庫切れ</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>在庫数</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="例：10" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

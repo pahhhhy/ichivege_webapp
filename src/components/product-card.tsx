@@ -16,6 +16,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const availability = product.stock > 0 ? '在庫あり' : '在庫切れ';
   return (
     <Link href={`/product/${product.id}`} className="group">
       <Card className="flex h-full transform flex-col overflow-hidden transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg">
@@ -40,8 +41,8 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className="text-lg font-semibold text-primary">
             {product.price.toFixed(0)}円
           </p>
-          <Badge variant={product.availability === '在庫あり' ? 'secondary' : 'destructive'}>
-            {product.availability}
+          <Badge variant={availability === '在庫あり' ? 'secondary' : 'destructive'}>
+            {availability}
           </Badge>
         </CardFooter>
       </Card>

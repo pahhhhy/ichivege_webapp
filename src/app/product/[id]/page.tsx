@@ -23,6 +23,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
   }
 
   const producer = producers.find((p) => p.id === product.producerId);
+  const availability = product.stock > 0 ? '在庫あり' : '在庫切れ';
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12">
@@ -51,16 +52,16 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               <Sprout className="h-4 w-4" />
               {product.farmingMethod}
             </Badge>
-            <Badge variant={product.availability === '在庫あり' ? 'default' : 'destructive'} className="flex items-center gap-2 bg-accent py-1 text-sm text-accent-foreground">
+            <Badge variant={availability === '在庫あり' ? 'default' : 'destructive'} className="flex items-center gap-2 bg-accent py-1 text-sm text-accent-foreground">
               <Truck className="h-4 w-4" />
-              {product.availability}
+              {availability}
             </Badge>
           </div>
           <Button
             size="lg"
             className="mt-8 w-full"
             onClick={() => addToCart(product)}
-            disabled={product.availability !== '在庫あり'}
+            disabled={availability !== '在庫あり'}
           >
             <ShoppingCart className="mr-2 h-5 w-5" />
             カートに追加

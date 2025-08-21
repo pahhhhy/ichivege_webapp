@@ -19,6 +19,7 @@ export interface Product {
   origin: string;
   farmingMethod: '有機栽培' | '慣行栽培' | '水耕栽培';
   availability: '在庫あり' | '在庫切れ';
+  stock: number;
   dataAiHint?: string;
 }
 
