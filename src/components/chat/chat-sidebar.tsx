@@ -33,15 +33,20 @@ export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatS
   useEffect(() => {
     const q = query(
         collection(db, 'chats'), 
-        where('participantUids', 'array-contains', currentUser.uid),
-        orderBy('lastMessageAt', 'desc')
+        where('participantUids', 'array-contains', currentUser.uid)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const rooms = querySnapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as ChatRoom)
       );
-      setChatRooms(rooms);
+      // Sort on the client-side to avoid composite index
+      const sortedRooms = rooms.sort((a, b) => {
+        const timeA = a.lastMessageAt?.toMillis() || 0;
+        const timeB = b.lastMessageAt?.toMillis() || 0;
+        return timeB - timeA;
+      });
+      setChatRooms(sortedRooms);
       setLoading(false);
     });
 
