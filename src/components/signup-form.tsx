@@ -31,7 +31,7 @@ const formSchema = z.object({
   username: z.string().min(2, 'ユーザー名は2文字以上で入力してください。'),
   email: z.string().email('無効なメールアドレスです。'),
   password: z.string().min(6, 'パスワードは6文字以上で入力してください。'),
-  role: z.enum(['農家', '一般ユーザー', '飲食店', '管理者']),
+  role: z.enum(['農家', '一般ユーザー', '飲食店']),
   phoneNumber: z.string().min(10, '有効な電話番号を入力してください。'),
 });
 
@@ -144,7 +144,6 @@ export function SignupForm() {
                             <SelectItem value="農家">農家</SelectItem>
                             <SelectItem value="一般ユーザー">一般ユーザー</SelectItem>
                             <SelectItem value="飲食店">飲食店</SelectItem>
-                            <SelectItem value="管理者">管理者</SelectItem>
                         </SelectContent>
                     </Select>
                     <FormMessage />
