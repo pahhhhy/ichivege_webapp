@@ -1,7 +1,8 @@
+
 'use client';
 
 import Link from 'next/link';
-import { Leaf, ShoppingCart, Menu, Sparkles, User, History, UserPlus, LogIn, LogOut } from 'lucide-react';
+import { Leaf, ShoppingCart, Menu, Sparkles, User, History, UserPlus, LogIn, LogOut, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/cart-context';
@@ -135,6 +136,13 @@ export function Header() {
                     </p>
                   </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    <span>プロフィール</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
