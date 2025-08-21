@@ -39,12 +39,14 @@ export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
 
     const batch = writeBatch(db);
     
-    // Update readBy field in message documents
+    // Update readBy field in message documents for unread messages sent by others
     messagesToMark.forEach(msg => {
-        const msgRef = doc(db, 'chats', chatRoomId, 'messages', msg.id);
-        batch.update(msgRef, {
-            readBy: [...(msg.readBy || []), currentUser.uid]
-        });
+        if (msg.senderId !== currentUser.uid) {
+            const msgRef = doc(db, 'chats', chatRoomId, 'messages', msg.id);
+            batch.update(msgRef, {
+                readBy: [...(msg.readBy || []), currentUser.uid]
+            });
+        }
     });
     
     // Update lastReadBy timestamp in chat room document
@@ -71,9 +73,17 @@ export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
       setLoading(false);
       
       // Identify unread messages and mark them as read
-      const unreadMessages = msgs.filter(msg => msg.readBy && !msg.readBy.includes(currentUser.uid));
+      const unreadMessages = msgs.filter(msg => msg.senderId !== currentUser.uid && (!msg.readBy || !msg.readBy.includes(currentUser.uid)));
       if (unreadMessages.length > 0) {
         markMessagesAsRead(unreadMessages);
+      } else {
+        // Even if there are no new messages, we update the last read time to now.
+        const chatRoomRef = doc(db, 'chats', chatRoomId);
+        const batch = writeBatch(db);
+        batch.update(chatRoomRef, {
+            [`lastReadBy.${currentUser.uid}`]: Timestamp.now()
+        });
+        batch.commit().catch(console.error);
       }
     });
 
