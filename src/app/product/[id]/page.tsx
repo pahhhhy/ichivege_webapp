@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/cart-context';
@@ -43,16 +43,19 @@ function ProductPageSkeleton() {
 }
 
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+export default function ProductPage() {
+  const params = useParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [producer, setProducer] = useState<Producer | null>(null);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
   useEffect(() => {
+    if (!id) return;
     const fetchProduct = async () => {
         setLoading(true);
-        const productDocRef = doc(db, 'products', params.id);
+        const productDocRef = doc(db, 'products', id);
         const productDoc = await getDoc(productDocRef);
 
         if (productDoc.exists()) {
@@ -72,7 +75,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         setLoading(false);
     }
     fetchProduct();
-  }, [params.id]);
+  }, [id]);
 
 
   if (loading) {
