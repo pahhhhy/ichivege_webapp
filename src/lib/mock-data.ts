@@ -1,4 +1,4 @@
-import type { Producer, Product, Order } from '@/lib/types';
+import type { Producer, Product } from '@/lib/types';
 
 export const producers: Producer[] = [
   {
@@ -23,20 +23,7 @@ export const producers: Producer[] = [
 
 export const products: Product[] = [];
 
-export const orders: Order[] = [
-  {
-    id: 'order-1',
-    date: '2023-10-26',
-    items: [],
-    total: 1350,
-  },
-  {
-    id: 'order-2',
-    date: '2023-10-15',
-    items: [],
-    total: 3075,
-  },
-];
+export const orders = []; // This is now fetched from Firestore
 
 export const seasonalVegetables = [
   'ケール',
