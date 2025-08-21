@@ -54,6 +54,8 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   phoneNumber: string;
+  postalCode?: string;
+  address?: string;
   // For producers
   name?: string;
   location?: string;
@@ -65,6 +67,7 @@ export interface AuthContextType {
     userProfile: UserProfile | null;
     loading: boolean;
     logout: () => void;
+    refreshUserProfile: () => Promise<void>;
 }
 
 export interface Post {
