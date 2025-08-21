@@ -104,15 +104,20 @@ export default function OrdersPage() {
 
     const q = query(
       collection(db, 'orders'),
-      where('userId', '==', user.uid),
-      orderBy('orderDate', 'desc')
+      where('userId', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const ordersData = querySnapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as Order)
       );
-      setOrders(ordersData);
+      // Sort on the client-side
+      const sortedOrders = ordersData.sort((a, b) => {
+          const dateA = a.orderDate?.toDate() || 0;
+          const dateB = b.orderDate?.toDate() || 0;
+          return dateB - dateA;
+      });
+      setOrders(sortedOrders);
       setLoading(false);
     }, (error) => {
         console.error("Error fetching orders: ", error);
