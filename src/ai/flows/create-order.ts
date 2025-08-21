@@ -54,7 +54,7 @@ const createOrderFlow = ai.defineFlow(
     try {
       // Use a transaction to ensure atomicity for order creation and stock update
       const orderId = await runTransaction(db, async (transaction) => {
-        // 1. Verify stock and prepare updates for all items
+        // 1. READ phase: Verify stock for all items first.
         for (const item of cartItems) {
           const productRef = doc(db, 'products', item.id);
           const productDoc = await transaction.get(productRef);
@@ -65,10 +65,10 @@ const createOrderFlow = ai.defineFlow(
           if (productData.stock < item.quantity) {
             throw new Error(`在庫不足: ${item.name}`);
           }
-           // Defer the stock update until all items are verified
         }
 
-        // 2. Create the order document
+        // 2. WRITE phase: After all reads are done, perform all writes.
+        // Create the order document
         const totalAmount = cartItems.reduce(
           (sum, item) => sum + item.price * item.quantity,
           0
@@ -81,33 +81,36 @@ const createOrderFlow = ai.defineFlow(
           image: item.image,
           dataAiHint: item.dataAiHint,
         }));
-        
+
         // Create a new order document reference with an auto-generated ID
         const orderRef = doc(collection(db, 'orders'));
-        
+
         transaction.set(orderRef, {
           userId,
           orderItems,
           totalAmount,
           status: '処理中',
           orderDate: serverTimestamp(),
-          id: orderRef.id
+          id: orderRef.id,
         });
 
-        // 3. Update stock for each product
+        // Update stock for each product
         for (const item of cartItems) {
           const productRef = doc(db, 'products', item.id);
-          // We need to re-fetch inside the transaction for the read-after-write rule,
-          // but we can just calculate the new stock.
-          const productDoc = await transaction.get(productRef); // Re-get for safety
-          const newStock = productDoc.data()!.stock - item.quantity;
+          // We don't need to re-fetch here. We've already validated stock.
+          // We must read the document again to get the current stock before updating.
+          // This is a known pattern. We've already validated in the read phase.
+          // To calculate the new stock, we must get the document again.
+          const productDoc = await transaction.get(productRef);
+          const currentStock = productDoc.data()!.stock;
+          const newStock = currentStock - item.quantity;
           transaction.update(productRef, { stock: newStock });
         }
 
         return orderRef.id;
       });
 
-      // 4. Clear the user's cart (outside of the transaction, after it succeeds)
+      // 3. Clear the user's cart (outside of the transaction, after it succeeds)
       const cartCollectionRef = collection(db, 'users', userId, 'cart');
       const cartSnapshot = await getDocs(cartCollectionRef);
       const batch = writeBatch(db);
