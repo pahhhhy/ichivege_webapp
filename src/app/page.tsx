@@ -1,15 +1,8 @@
-import Link from 'next/link';
 import { ProductCard } from '@/components/product-card';
 import { products } from '@/lib/mock-data';
 import type { Product } from '@/lib/types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { CategoryFilter } from '@/components/category-filter';
 
 export default function Home({
   searchParams,
@@ -26,7 +19,7 @@ export default function Home({
           (p) => p.category.toLowerCase() === category.toLowerCase()
         );
 
-  const categories = [...new Set(products.map((p) => p.category))];
+  const categories = ['all', ...new Set(products.map((p) => p.category))];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -40,24 +33,7 @@ export default function Home({
       </header>
 
       <div className="mb-6 flex items-center justify-end">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">カテゴリーで絞り込む:</span>
-          <Select defaultValue={category}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="カテゴリー" />
-            </SelectTrigger>
-            <SelectContent>
-              <Link href="/">
-                <SelectItem value="all">すべて</SelectItem>
-              </Link>
-              {categories.map((cat) => (
-                <Link href={`/?category=${cat.toLowerCase()}`} key={cat}>
-                  <SelectItem value={cat.toLowerCase()}>{cat}</SelectItem>
-                </Link>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <CategoryFilter categories={categories} currentCategory={category} />
       </div>
       
       <Separator className="mb-8" />
