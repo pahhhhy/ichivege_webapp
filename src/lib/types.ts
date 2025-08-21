@@ -1,3 +1,4 @@
+import { User } from 'firebase/auth';
 
 export interface Producer {
   id: string;
@@ -8,7 +9,7 @@ export interface Producer {
 
 export interface Product {
   id: string;
-  name: string;
+  name:string;
   description: string;
   price: number;
   currency: 'USD' | 'JPY';
@@ -40,4 +41,11 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   phoneNumber: string;
+}
+
+export interface AuthContextType {
+    user: User | null;
+    userProfile: UserProfile | null;
+    loading: boolean;
+    logout: () => void;
 }
