@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -8,12 +7,14 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // 商品は誰でも読めるが、書き込みは認証済みのユーザーのみ可能
+    // 認証済みのユーザーは商品を読み取ることができ、
+    // 認証済みのユーザーは商品を作成できます。
     match /products/{productId} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow create: if request.auth != null;
-      // You might want to add more specific update/delete rules, e.g. only the producer can edit.
-      // allow update, delete: if request.auth != null && resource.data.producerId == request.auth.uid;
+      // You might want to add update/delete rules here later,
+      // for example, only allowing the producer who created the product to edit it.
+      // allow update, delete: if request.auth.uid == resource.data.producerId;
     }
   }
 }
