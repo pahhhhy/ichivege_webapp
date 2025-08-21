@@ -24,6 +24,8 @@ import {
   addDoc,
   serverTimestamp,
   and,
+  getDoc,
+  doc,
 } from 'firebase/firestore';
 import type { UserProfile, ChatRoom } from '@/lib/types';
 import { User } from 'firebase/auth';
@@ -107,8 +109,8 @@ export function UserSearchDialog({ currentUser, onChatRoomSelect }: UserSearchDi
         }
 
         // Create a new chat room
-        const currentUserProfileDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', currentUser.uid)));
-        const currentUserProfile = currentUserProfileDoc.docs[0]?.data();
+        const currentUserProfileDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const currentUserProfile = currentUserProfileDoc.data();
         
         if (!currentUserProfile) {
             throw new Error("Could not find current user's profile.");
@@ -125,11 +127,11 @@ export function UserSearchDialog({ currentUser, onChatRoomSelect }: UserSearchDi
             lastMessageAt: serverTimestamp(),
         });
         
-        const newChatRoomData = (await getDocs(query(chatsRef, where('__name__', '==', newChatRoomRef.id)))).docs[0].data();
+        const newChatRoomDoc = await getDoc(newChatRoomRef);
 
         onChatRoomSelect({ 
-            id: newChatRoomRef.id, 
-            ...newChatRoomData
+            id: newChatRoomDoc.id, 
+            ...newChatRoomDoc.data()
         } as ChatRoom);
         setIsOpen(false);
     } catch(error) {
