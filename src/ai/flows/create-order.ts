@@ -71,7 +71,7 @@ const createOrderFlow = ai.defineFlow(
           }
           const productData = productDoc.data() as Product;
           if (productData.stock < item.quantity) {
-            throw new Error(`在庫不足: ${item.name}`);
+            throw new Error(`在庫不足: ${item.name} (現在の在庫: ${productData.stock})`);
           }
           productsToUpdate.push({
             ref: productRef,
