@@ -25,7 +25,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 const navLinks = [
   { href: '/', label: '商品一覧', icon: Leaf },
-  { href: '/recommendations', label: 'おすすめ', icon: Sparkles },
   { href: '/orders', label: '注文履歴', icon: History },
   { href: '/producer/dashboard', label: '生産者向け', icon: User },
 ];
