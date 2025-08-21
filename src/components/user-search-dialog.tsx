@@ -88,12 +88,16 @@ export function UserSearchDialog({ currentUser, onChatRoomSelect }: UserSearchDi
         // Check if a chat room already exists
         const chatsRef = collection(db, 'chats');
         const q = query(chatsRef, 
-            where('participantUids', 'array-contains', currentUser.uid)
+            and(
+                where('participantUids', 'array-contains', currentUser.uid),
+                where('participantUids', 'array-contains', otherUser.uid)
+            )
         );
         const querySnapshot = await getDocs(q);
+        // Find the chat with exactly two participants
         const existingChat = querySnapshot.docs.find(doc => {
             const data = doc.data();
-            return data.participantUids.includes(otherUser.uid);
+            return data.participantUids.length === 2;
         });
 
         if (existingChat) {
@@ -103,7 +107,9 @@ export function UserSearchDialog({ currentUser, onChatRoomSelect }: UserSearchDi
         }
 
         // Create a new chat room
-        const currentUserProfile = (await getDocs(query(collection(db, 'users'), where('uid', '==', currentUser.uid)))).docs[0]?.data();
+        const currentUserProfileDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', currentUser.uid)));
+        const currentUserProfile = currentUserProfileDoc.docs[0]?.data();
+        
         if (!currentUserProfile) {
             throw new Error("Could not find current user's profile.");
         }
@@ -119,17 +125,12 @@ export function UserSearchDialog({ currentUser, onChatRoomSelect }: UserSearchDi
             lastMessageAt: serverTimestamp(),
         });
         
+        const newChatRoomData = (await getDocs(query(chatsRef, where('__name__', '==', newChatRoomRef.id)))).docs[0].data();
+
         onChatRoomSelect({ 
             id: newChatRoomRef.id, 
-            participantUids: [currentUser.uid, otherUser.uid],
-            participants: [
-                { uid: currentUser.uid, username: currentUserProfile.username },
-                { uid: otherUser.uid, username: otherUser.username }
-            ],
-            createdAt: new Date(),
-            lastMessage: '',
-            lastMessageAt: new Date(),
-        });
+            ...newChatRoomData
+        } as ChatRoom);
         setIsOpen(false);
     } catch(error) {
         console.error("Error creating chat room: ", error);
