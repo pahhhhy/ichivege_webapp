@@ -23,7 +23,6 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
-  and,
   getDoc,
   doc,
 } from 'firebase/firestore';
@@ -89,17 +88,15 @@ export function UserSearchDialog({ currentUser, onChatRoomSelect }: UserSearchDi
     try {
         // Check if a chat room already exists
         const chatsRef = collection(db, 'chats');
-        const q = query(chatsRef, 
-            and(
-                where('participantUids', 'array-contains', currentUser.uid),
-                where('participantUids', 'array-contains', otherUser.uid)
-            )
-        );
+        const q = query(chatsRef, where('participantUids', 'array-contains', currentUser.uid));
         const querySnapshot = await getDocs(q);
-        // Find the chat with exactly two participants
+
+        // Client-side filter to find the exact chat room
         const existingChat = querySnapshot.docs.find(doc => {
             const data = doc.data();
-            return data.participantUids.length === 2;
+            const participantUids = data.participantUids as string[];
+            // Check for a 1-on-1 chat with the other user
+            return participantUids.length === 2 && participantUids.includes(otherUser.uid);
         });
 
         if (existingChat) {
