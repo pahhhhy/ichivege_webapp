@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { recommendVegetables } from '@/ai/flows/vegetable-recommendation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,7 +63,7 @@ export function RecommendationForm({
   seasonalOptions: string[];
   purchaseOptions: string[];
 }) {
-  const [state, action] = useFormState(formAction, initialState);
+  const [state, action] = useActionState(formAction, initialState);
   const [selectedPurchases, setSelectedPurchases] = useState<string[]>([]);
   
   useEffect(() => {
