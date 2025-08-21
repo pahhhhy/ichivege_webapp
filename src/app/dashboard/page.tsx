@@ -31,7 +31,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { ChartTooltipContent, ChartContainer } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, Package, ShoppingBag, Users } from 'lucide-react';
 import { format } from 'date-fns';
@@ -40,6 +40,12 @@ type DailySales = {
   date: string;
   total: number;
 };
+
+const chartConfig = {
+    total: {
+      label: '売上',
+    },
+  };
 
 export default function DashboardPage() {
   const { userProfile, loading: authLoading } = useAuth();
@@ -226,15 +232,26 @@ export default function DashboardPage() {
             <CardTitle>売上の概要</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={dailySales}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}円`} />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+          <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+              <BarChart accessibilityLayer data={dailySales}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                />
+                <YAxis
+                  tickFormatter={(value) => `${value}円`}
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={10}
+                  width={80}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="total" fill="var(--color-total, hsl(var(--primary)))" radius={4} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
         <Card>
@@ -296,3 +313,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
