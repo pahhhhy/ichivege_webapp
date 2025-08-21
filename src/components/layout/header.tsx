@@ -26,7 +26,6 @@ import React from 'react';
 const navLinks = [
   { href: '/', label: '商品一覧', icon: Leaf },
   { href: '/orders', label: '注文履歴', icon: History },
-  { href: '/producer/dashboard', label: '生産者向け', icon: User },
 ];
 
 function MainNav() {
