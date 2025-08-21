@@ -71,12 +71,16 @@ export function SignupForm() {
       });
       form.reset();
       // Redirect to home or login page after successful registration
-      // window.location.href = '/'; 
+      // window.location.href = '/';
     } catch (error: any) {
       console.error('Registration error:', error);
+      let description = '登録中にエラーが発生しました。もう一度お試しください。';
+      if (error.code === 'auth/email-already-in-use') {
+        description = 'このメールアドレスは既に使用されています。';
+      }
       toast({
         title: '登録エラー',
-        description: error.message || '登録中にエラーが発生しました。もう一度お試しください。',
+        description: description,
         variant: 'destructive',
       });
     }
