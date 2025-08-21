@@ -81,9 +81,10 @@ export default function CheckoutPage() {
             </CardHeader>
             <CardContent>
               <p className="font-semibold">{userProfile.username}</p>
-              <p>〒XXX-XXXX</p>
-              <p>東京都渋谷区...</p>
-              <p>電話番号: {userProfile.phoneNumber}</p>
+              {userProfile.postalCode && <p>〒{userProfile.postalCode}</p>}
+              {userProfile.address && <p>{userProfile.address}</p>}
+              {!userProfile.address && <p className='text-sm text-muted-foreground'>マイページから住所を登録してください。</p>}
+              <p className='mt-2'>電話番号: {userProfile.phoneNumber}</p>
             </CardContent>
           </Card>
           <Card>
@@ -154,7 +155,7 @@ export default function CheckoutPage() {
           )}
           <Button
             onClick={handleCreateOrder}
-            disabled={cartItems.length === 0 || isProcessing}
+            disabled={cartItems.length === 0 || isProcessing || !userProfile.address}
             className="w-full"
             size="lg"
           >

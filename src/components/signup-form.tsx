@@ -33,6 +33,8 @@ const formSchema = z.object({
   password: z.string().min(6, 'パスワードは6文字以上で入力してください。'),
   role: z.enum(['農家', '一般ユーザー', '飲食店']),
   phoneNumber: z.string().min(10, '有効な電話番号を入力してください。'),
+  postalCode: z.string().min(7, '郵便番号は7文字で入力してください。').max(7, '郵便番号は7文字で入力してください。'),
+  address: z.string().min(5, '住所は5文字以上で入力してください。'),
 });
 
 export function SignupForm() {
@@ -45,6 +47,8 @@ export function SignupForm() {
       password: '',
       role: '一般ユーザー',
       phoneNumber: '',
+      postalCode: '',
+      address: '',
     },
   });
 
@@ -63,6 +67,8 @@ export function SignupForm() {
         email: values.email,
         role: values.role,
         phoneNumber: values.phoneNumber,
+        postalCode: values.postalCode,
+        address: values.address,
       });
 
       toast({
@@ -158,6 +164,32 @@ export function SignupForm() {
               <FormLabel>電話番号</FormLabel>
               <FormControl>
                 <Input placeholder="09012345678" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="postalCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>郵便番号 (ハイフンなし)</FormLabel>
+              <FormControl>
+                <Input placeholder="1500002" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>住所</FormLabel>
+              <FormControl>
+                <Input placeholder="東京都渋谷区渋谷..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

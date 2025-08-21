@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, Mail, Phone, User, UserCog } from 'lucide-react';
+import { History, Mail, Phone, User, UserCog, MapPin, Building } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -32,6 +32,7 @@ import Image from 'next/image';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
+import { ProfileEditDialog } from '@/components/profile-edit-dialog';
 
 
 function OrderItem({ order }: { order: Order }) {
@@ -100,7 +101,7 @@ function OrderItem({ order }: { order: Order }) {
 
 
 function ProfilePage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading, refreshUserProfile } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -112,7 +113,12 @@ function ProfilePage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+        if (!loading) {
+            setLoadingOrders(false);
+        }
+      return;
+    }
 
     setLoadingOrders(true);
     const q = query(
@@ -138,7 +144,7 @@ function ProfilePage() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, loading]);
 
   const getInitials = (email: string | null | undefined) => {
     if (!email) return '??';
@@ -171,7 +177,10 @@ function ProfilePage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
-      <h1 className="font-headline mb-8 text-4xl font-bold">マイページ</h1>
+        <div className="mb-8 flex items-center justify-between">
+            <h1 className="font-headline text-4xl font-bold">マイページ</h1>
+            <ProfileEditDialog userProfile={userProfile} onUpdate={refreshUserProfile} />
+        </div>
       <div className="grid gap-8 md:grid-cols-1">
         <Card>
           <CardHeader className="items-center gap-4 text-center">
@@ -191,6 +200,14 @@ function ProfilePage() {
               <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
                 <Phone className="h-5 w-5 text-muted-foreground" />
                 <span className="font-medium">{userProfile.phoneNumber}</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
+                <Building className="h-5 w-5 text-muted-foreground" />
+                <span className="font-medium">{userProfile.postalCode || '未設定'}</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
+                <MapPin className="h-5 w-5 text-muted-foreground" />
+                <span className="font-medium">{userProfile.address || '未設定'}</span>
               </div>
           </CardContent>
         </Card>
