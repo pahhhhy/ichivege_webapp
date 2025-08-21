@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, Mail, Phone, User, UserCog, MapPin, Building } from 'lucide-react';
+import { History, Phone, UserCog, MapPin, Building } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/table';
 import Image from 'next/image';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 import { ProfileEditDialog } from '@/components/profile-edit-dialog';
 
@@ -199,7 +199,7 @@ function ProfilePage() {
               </div>
               <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
                 <Phone className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium">{userProfile.phoneNumber}</span>
+                <span className="font-medium">{userProfile.phoneNumber || '未設定'}</span>
               </div>
               <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
                 <Building className="h-5 w-5 text-muted-foreground" />

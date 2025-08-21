@@ -38,7 +38,7 @@ interface ProfileEditDialogProps {
 const formSchema = z.object({
   username: z.string().min(2, 'ユーザー名は2文字以上で入力してください。'),
   phoneNumber: z.string().min(10, '有効な電話番号を入力してください。'),
-  postalCode: z.string().min(7, '郵便番号は7文字で入力してください。').max(7, '郵便番号は7文字で入力してください。'),
+  postalCode: z.string().regex(/^[0-9]{7}$/, '郵便番号は7桁の数字で入力してください。'),
   address: z.string().min(5, '住所は5文字以上で入力してください。'),
 });
 
