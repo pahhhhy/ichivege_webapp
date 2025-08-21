@@ -93,8 +93,8 @@ export interface ChatRoom {
     lastMessageAt: Timestamp;
     lastMessageSenderId?: string;
     // Map of userId to their last read timestamp
-    lastReadBy?: { [key: string]: Timestamp }; 
-    unreadCounts?: { [key: string]: number };
+    lastReadby?: { [key: string]: Timestamp }; 
+    lastReadBy?: { [key: string]: Timestamp };
 }
 
 export interface Message {

@@ -33,6 +33,8 @@ const formSchema = z.object({
   price: z.coerce.number().min(0, '価格は0以上で入力してください。'),
   stock: z.coerce.number().min(0, '在庫数は0以上で入力してください。'),
   description: z.string().min(10, '詳細は10文字以上で入力してください。').max(500),
+  origin: z.string().min(2, '産地は2文字以上で入力してください。'),
+  farmingMethod: z.enum(['有機栽培', '慣行栽培', '水耕栽培']),
 });
 
 interface ProductAddFormProps {
@@ -50,6 +52,8 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
       price: 0,
       stock: 0,
       description: '',
+      origin: '',
+      farmingMethod: '有機栽培',
     },
   });
 
@@ -62,8 +66,6 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
         currency: 'JPY',
         image: 'https://placehold.co/600x400.png', // Placeholder image
         dataAiHint: `${values.name} vegetable`,
-        origin: '未設定', // You might want to get this from producer's profile
-        farmingMethod: '未設定', // You might want to add this to the form
         createdAt: serverTimestamp(),
       });
 
@@ -161,6 +163,41 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
                   {...field}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="origin"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>産地</FormLabel>
+              <FormControl>
+                <Input placeholder="例：北海道" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="farmingMethod"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>栽培方法</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="栽培方法を選択" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="有機栽培">有機栽培</SelectItem>
+                  <SelectItem value="慣行栽培">慣行栽培</SelectItem>
+                  <SelectItem value="水耕栽培">水耕栽培</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
