@@ -31,19 +31,25 @@ const useUnreadCounts = (chatRooms: ChatRoom[], userId: string) => {
     const [unreadCounts, setUnreadCounts] = useState<{ [key: string]: number }>({});
   
     useEffect(() => {
+      if (!userId) return;
+  
       const unsubscribes = chatRooms.map(room => {
         const lastReadTimestamp = room.lastReadBy?.[userId] || new Timestamp(0, 0);
         
+        // Query for all messages after the last read timestamp.
+        // We will filter by sender on the client-side to avoid composite index requirements.
         const q = query(
           collection(db, 'chats', room.id, 'messages'),
-          where('createdAt', '>', lastReadTimestamp),
-          where('senderId', '!=', userId)
+          where('createdAt', '>', lastReadTimestamp)
         );
   
         return onSnapshot(q, (snapshot) => {
+          // Filter out messages sent by the current user on the client.
+          const unreadCount = snapshot.docs.filter(doc => doc.data().senderId !== userId).length;
+          
           setUnreadCounts(prevCounts => ({
             ...prevCounts,
-            [room.id]: snapshot.size
+            [room.id]: unreadCount,
           }));
         }, (error) => {
             console.error(`Error fetching unread count for room ${room.id}:`, error);
@@ -74,8 +80,8 @@ export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatS
       );
       // Sort on the client-side to avoid composite index
       const sortedRooms = rooms.sort((a, b) => {
-        const timeA = a.lastMessageAt?.toMillis() || 0;
-        const timeB = b.lastMessageAt?.toMillis() || 0;
+        const timeA = a.lastMessageAt?.toMillis() || a.createdAt?.toMillis() || 0;
+        const timeB = b.lastMessageAt?.toMillis() || b.createdAt?.toMillis() || 0;
         return timeB - timeA;
       });
       setChatRooms(sortedRooms);
