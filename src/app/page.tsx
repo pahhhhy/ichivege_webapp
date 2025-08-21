@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ProductCard } from '@/components/product-card';
 import type { Product } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
@@ -9,13 +10,10 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function Home({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -30,8 +28,7 @@ export default function Home({
     fetchProducts();
   }, []);
 
-  const category =
-    typeof searchParams.category === 'string' ? searchParams.category : 'all';
+  const category = searchParams.get('category') || 'all';
 
   const filteredProducts =
     category === 'all'
