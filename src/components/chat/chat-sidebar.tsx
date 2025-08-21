@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ChatRoom, ChatParticipant } from '@/lib/types';
 import { User } from 'firebase/auth';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
+import { Badge } from '../ui/badge';
 
 interface ChatSidebarProps {
   currentUser: User;
@@ -26,14 +27,45 @@ const getInitials = (name?: string) => {
     return name ? name.substring(0, 2).toUpperCase() : '??';
 }
 
+const useUnreadCounts = (chatRooms: ChatRoom[], userId: string) => {
+    const [unreadCounts, setUnreadCounts] = useState<{ [key: string]: number }>({});
+  
+    useEffect(() => {
+      const unsubscribes = chatRooms.map(room => {
+        const lastReadTimestamp = room.lastReadBy?.[userId] || new Timestamp(0, 0);
+        
+        const q = query(
+          collection(db, 'chats', room.id, 'messages'),
+          where('createdAt', '>', lastReadTimestamp)
+        );
+  
+        return onSnapshot(q, (snapshot) => {
+          // Count messages not sent by the current user
+          const unreadCount = snapshot.docs.filter(doc => doc.data().senderId !== userId).length;
+          
+          setUnreadCounts(prevCounts => ({
+            ...prevCounts,
+            [room.id]: unreadCount
+          }));
+        });
+      });
+  
+      return () => unsubscribes.forEach(unsub => unsub());
+    }, [chatRooms, userId]);
+  
+    return unreadCounts;
+  };
+
+
 export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatSidebarProps) {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
+  const unreadCounts = useUnreadCounts(chatRooms, currentUser.uid);
 
   useEffect(() => {
     const q = query(
         collection(db, 'chats'), 
-        where('participantUids', 'array-contains', currentUser.uid)
+        where('participantUids', 'array-contains', currentUser.uid),
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -73,6 +105,7 @@ export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatS
         )}
         {chatRooms.map((room) => {
             const otherParticipant = getOtherParticipant(room.participants, currentUser.uid);
+            const unreadCount = unreadCounts[room.id] || 0;
             return (
                 <button
                     key={room.id}
@@ -87,10 +120,15 @@ export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatS
                     </Avatar>
                     <div className="flex-1 truncate">
                         <div className="font-semibold">{otherParticipant?.username}</div>
-                        <p className="truncate text-sm text-muted-foreground">
+                        <p className={cn("truncate text-sm", unreadCount > 0 ? "text-foreground font-bold" : "text-muted-foreground")}>
                            {room.lastMessage || 'まだメッセージはありません'}
                         </p>
                     </div>
+                    {unreadCount > 0 && (
+                        <Badge className="flex h-6 w-6 items-center justify-center rounded-full">
+                            {unreadCount}
+                        </Badge>
+                    )}
                 </button>
             )
         })}

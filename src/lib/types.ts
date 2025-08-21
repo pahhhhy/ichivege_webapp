@@ -1,5 +1,6 @@
 
 import { User } from 'firebase/auth';
+import { Timestamp } from 'firebase/firestore';
 
 export interface Producer {
   id: string;
@@ -84,14 +85,19 @@ export interface ChatRoom {
     id: string;
     participants: ChatParticipant[];
     participantUids: string[];
-    createdAt: any; // Firestore Timestamp
+    createdAt: Timestamp;
     lastMessage: string;
-    lastMessageAt: any; // Firestore Timestamp
+    lastMessageAt: Timestamp;
+    lastMessageSenderId?: string;
+    // Map of userId to their last read timestamp
+    lastReadBy?: { [key: string]: Timestamp }; 
+    unreadCounts?: { [key: string]: number };
 }
 
 export interface Message {
     id: string;
     text: string;
     senderId: string;
-    createdAt: any; // Firestore Timestamp
+    createdAt: Timestamp;
+    readBy: string[];
 }

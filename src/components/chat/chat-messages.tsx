@@ -2,14 +2,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, Timestamp, writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Message } from '@/lib/types';
 import { User } from 'firebase/auth';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
-import { format, isSameDay, formatDistanceToNow } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 interface ChatMessagesProps {
@@ -33,6 +33,30 @@ export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
+  // Function to mark messages as read
+  const markMessagesAsRead = async (messagesToMark: Message[]) => {
+    if (messagesToMark.length === 0) return;
+
+    const batch = writeBatch(db);
+    
+    // Update readBy field in message documents
+    messagesToMark.forEach(msg => {
+        const msgRef = doc(db, 'chats', chatRoomId, 'messages', msg.id);
+        batch.update(msgRef, {
+            readBy: [...msg.readBy, currentUser.uid]
+        });
+    });
+    
+    // Update lastReadBy timestamp in chat room document
+    const chatRoomRef = doc(db, 'chats', chatRoomId);
+    batch.update(chatRoomRef, {
+        [`lastReadBy.${currentUser.uid}`]: Timestamp.now()
+    });
+
+    await batch.commit().catch(console.error);
+  };
+
+
   useEffect(() => {
     const q = query(
       collection(db, 'chats', chatRoomId, 'messages'),
@@ -45,10 +69,16 @@ export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
       );
       setMessages(msgs);
       setLoading(false);
+      
+      // Identify unread messages and mark them as read
+      const unreadMessages = msgs.filter(msg => !msg.readBy.includes(currentUser.uid));
+      if (unreadMessages.length > 0) {
+        markMessagesAsRead(unreadMessages);
+      }
     });
 
     return () => unsubscribe();
-  }, [chatRoomId]);
+  }, [chatRoomId, currentUser.uid]);
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
