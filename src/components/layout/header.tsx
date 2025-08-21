@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Leaf, ShoppingCart, Menu, Sparkles, User, History, UserPlus, LogIn, LogOut, UserCircle } from 'lucide-react';
+import { Leaf, ShoppingCart, Menu, User, History, UserPlus, LogIn, LogOut, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/cart-context';
@@ -10,7 +10,6 @@ import { usePathname } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/auth-context';
 import {
   DropdownMenu,
@@ -20,7 +19,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import React from 'react';
 
 
 const navLinks = [
@@ -32,7 +32,7 @@ const navLinks = [
 function MainNav() {
   const pathname = usePathname();
   return (
-    <nav className="flex items-center gap-4 lg:gap-6">
+    <nav className="hidden items-center gap-4 md:flex lg:gap-6">
       {navLinks.map((link) => (
         <Link
           key={link.href}
@@ -51,16 +51,18 @@ function MainNav() {
 
 function MobileNav() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = React.useState(false);
+
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon">
+        <Button variant="outline" size="icon" className="md:hidden">
           <Menu className="h-4 w-4" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left">
         <div className="flex flex-col gap-4 py-4">
-          <Link href="/" className="mb-4 flex items-center gap-2">
+          <Link href="/" className="mb-4 flex items-center gap-2" onClick={() => setIsOpen(false)}>
             <Leaf className="h-6 w-6 text-primary" />
             <span className="font-bold">ICHIVEGE</span>
           </Link>
@@ -68,6 +70,7 @@ function MobileNav() {
             <Link
               key={link.href}
               href={link.href}
+              onClick={() => setIsOpen(false)}
               className={cn(
                 'flex items-center gap-3 rounded-md p-2 text-lg font-medium transition-colors hover:bg-accent',
                 pathname === link.href
@@ -85,19 +88,11 @@ function MobileNav() {
   );
 }
 
-function Navigation() {
-  const isMobile = useIsMobile();
-  if (isMobile === undefined) {
-    return null;
-  }
-  return isMobile ? <MobileNav /> : <MainNav />;
-}
-
-const DynamicNavigation = dynamic(() => Promise.resolve(Navigation), { ssr: false });
 
 export function Header() {
   const { cartCount } = useCart();
   const { user, loading, logout } = useAuth();
+  const isMobile = useIsMobile();
 
   const getInitials = (email: string | null | undefined) => {
     return email ? email.substring(0, 2).toUpperCase() : '??';
@@ -111,7 +106,7 @@ export function Header() {
             <Leaf className="h-6 w-6 text-primary" />
             <span className="font-bold">ICHIVEGE</span>
           </Link>
-          <DynamicNavigation />
+          {isMobile ? <MobileNav /> : <MainNav />}
         </div>
 
         <div className="flex items-center gap-4">
@@ -150,7 +145,7 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <>
+            <div className='hidden md:flex md:items-center md:gap-4'>
               <Button asChild variant="ghost" size="sm">
                 <Link href="/login">
                   <LogIn className="mr-2 h-4 w-4" />
@@ -163,7 +158,7 @@ export function Header() {
                   新規登録
                 </Link>
               </Button>
-            </>
+            </div>
           )}
 
           <Link href="/cart">
