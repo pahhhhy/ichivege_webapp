@@ -4,27 +4,35 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     match /users/{userId} {
+      // 認証済みユーザーは他のユーザーの情報を読める
       allow read: if request.auth != null;
+      // ユーザーは自分自身の情報のみ書き込める
       allow write: if request.auth != null && request.auth.uid == userId;
 
+      // ユーザーは自分自身のカート情報のみ読み書き、削除できる
       match /cart/{cartItemId} {
         allow read, write, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
 
     match /products/{productId} {
+      // 誰でも商品を読める
       allow read: if true;
+      // 認証済みユーザー（農家）は商品を作成できる
       allow create: if request.auth != null;
-      // 在庫更新は認証済みユーザーなら誰でも可能 (注文処理のため)
-      // それ以外のフィールドの更新は生産者のみ
-      allow update: if request.auth != null && 
-                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']) ||
-                       request.auth.uid == resource.data.producerId);
+      // 商品の更新は生産者本人、または在庫更新の場合のみ許可
+      allow update: if request.auth != null && (
+        (request.auth.uid == resource.data.producerId) ||
+        (request.resource.data.stock == resource.data.stock - request.resource.data.quantity)
+      );
+      // 商品の削除は生産者本人のみ
       allow delete: if request.auth != null && request.auth.uid == resource.data.producerId;
     }
 
     match /orders/{orderId} {
+        // ユーザーは自分自身の注文を作成できる
         allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        // ユーザーは自分自身の注文のみを読める
         allow read: if request.auth != null && resource.data.userId == request.auth.uid;
     }
   }
