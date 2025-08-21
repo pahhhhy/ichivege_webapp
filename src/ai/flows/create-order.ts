@@ -10,8 +10,9 @@ import { z } from 'zod';
 import { adminDb } from '@/lib/firebase-admin'; // Use Admin SDK
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Product } from '@/lib/types';
-import { getDocs, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase'; // Client SDK for clearing cart
+// Removed unused client-side imports
+// import { getDocs, collection } from 'firebase/firestore';
+// import { db } from '@/lib/firebase'; // Client SDK for clearing cart
 
 const CreateOrderInputSchema = z.object({
   userId: z.string().describe('The ID of the user placing the order.'),
@@ -105,15 +106,18 @@ const createOrderFlow = ai.defineFlow(
         return orderRef.id;
       });
 
-      // 3. Clear the user's cart (using client SDK as it's a client-side action context)
+      // 3. Clear the user's cart using Admin SDK batch write
       // This is safe to do after the transaction succeeds.
-      const cartCollectionRef = collection(db, 'users', userId, 'cart');
-      const cartSnapshot = await getDocs(cartCollectionRef);
-      const batch = adminDb.batch(); // Use admin batch
-      cartSnapshot.docs.forEach((doc) => {
-        batch.delete(adminDb.collection('users').doc(userId).collection('cart').doc(doc.id));
-      });
-      await batch.commit();
+      const cartCollectionRef = adminDb.collection('users').doc(userId).collection('cart');
+      const cartSnapshot = await cartCollectionRef.get();
+      if (!cartSnapshot.empty) {
+        const batch = adminDb.batch();
+        cartSnapshot.docs.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+      }
+
 
       return orderId;
     } catch (error) {
