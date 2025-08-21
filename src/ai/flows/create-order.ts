@@ -55,6 +55,9 @@ const createOrderFlow = ai.defineFlow(
       // Use a transaction to ensure atomicity for order creation and stock update
       const orderId = await runTransaction(db, async (transaction) => {
         // 1. READ phase: Verify stock for all items first.
+        // We'll also store the product data to use in the write phase.
+        const productsToUpdate: { ref: any, currentStock: number, quantityToDecrement: number }[] = [];
+
         for (const item of cartItems) {
           const productRef = doc(db, 'products', item.id);
           const productDoc = await transaction.get(productRef);
@@ -65,9 +68,15 @@ const createOrderFlow = ai.defineFlow(
           if (productData.stock < item.quantity) {
             throw new Error(`在庫不足: ${item.name}`);
           }
+          productsToUpdate.push({
+            ref: productRef,
+            currentStock: productData.stock,
+            quantityToDecrement: item.quantity,
+          });
         }
 
         // 2. WRITE phase: After all reads are done, perform all writes.
+        
         // Create the order document
         const totalAmount = cartItems.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -95,18 +104,11 @@ const createOrderFlow = ai.defineFlow(
         });
 
         // Update stock for each product
-        for (const item of cartItems) {
-          const productRef = doc(db, 'products', item.id);
-          // We don't need to re-fetch here. We've already validated stock.
-          // We must read the document again to get the current stock before updating.
-          // This is a known pattern. We've already validated in the read phase.
-          // To calculate the new stock, we must get the document again.
-          const productDoc = await transaction.get(productRef);
-          const currentStock = productDoc.data()!.stock;
-          const newStock = currentStock - item.quantity;
-          transaction.update(productRef, { stock: newStock });
+        for (const prod of productsToUpdate) {
+            const newStock = prod.currentStock - prod.quantityToDecrement;
+            transaction.update(prod.ref, { stock: newStock });
         }
-
+        
         return orderRef.id;
       });
 
