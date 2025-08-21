@@ -27,11 +27,22 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  dataAiHint?: string;
+}
+
 export interface Order {
   id: string;
-  date: string;
-  items: CartItem[];
-  total: number;
+  userId: string;
+  orderItems: OrderItem[];
+  totalAmount: number;
+  orderDate: any; // Firestore Timestamp
+  status: '処理中' | '発送済み' | '完了';
 }
 
 export type UserRole = '農家' | '一般ユーザー' | '飲食店';
