@@ -35,6 +35,7 @@ export interface OrderItem {
   quantity: number;
   image: string;
   dataAiHint?: string;
+  producerId: string;
 }
 
 export interface Order {
