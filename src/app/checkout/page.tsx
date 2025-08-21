@@ -41,7 +41,16 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     setError(null);
     try {
-      const orderId = await createOrder({ userId: user.uid, cartItems });
+      const orderItemsForFlow = cartItems.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name,
+        image: item.image,
+        dataAiHint: item.dataAiHint || ''
+      }));
+
+      const orderId = await createOrder({ userId: user.uid, cartItems: orderItemsForFlow });
       toast({
         title: '注文が確定しました！',
         description: `ご注文ありがとうございます。注文番号: ${orderId}`,
@@ -157,4 +166,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
