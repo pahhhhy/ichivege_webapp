@@ -106,6 +106,8 @@ export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatS
         {chatRooms.map((room) => {
             const otherParticipant = getOtherParticipant(room.participants, currentUser.uid);
             const unreadCount = unreadCounts[room.id] || 0;
+            const lastMessageText = room.lastMessage || 'まだメッセージはありません';
+
             return (
                 <button
                     key={room.id}
@@ -120,8 +122,8 @@ export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatS
                     </Avatar>
                     <div className="flex-1 truncate">
                         <div className="font-semibold">{otherParticipant?.username}</div>
-                        <p className={cn("truncate text-sm", unreadCount > 0 ? "text-foreground font-bold" : "text-muted-foreground")}>
-                           {room.lastMessage || 'まだメッセージはありません'}
+                        <p className={cn("text-xs", unreadCount > 0 ? "text-foreground font-bold" : "text-muted-foreground")}>
+                           {lastMessageText.length > 15 ? `${lastMessageText.substring(0, 15)}...` : lastMessageText}
                         </p>
                     </div>
                     {unreadCount > 0 && (
