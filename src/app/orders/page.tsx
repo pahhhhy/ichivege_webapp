@@ -2,7 +2,6 @@
 'use client';
 
 import Image from 'next/image';
-import { orders } from '@/lib/mock-data';
 import {
   Accordion,
   AccordionContent,
@@ -19,27 +18,38 @@ import {
 } from '@/components/ui/table';
 import { History } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import type { Order } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
-function OrderItem({ order }: { order: (typeof orders)[0] }) {
+function OrderItem({ order }: { order: Order }) {
   const [formattedDate, setFormattedDate] = useState('');
 
   useEffect(() => {
-    setFormattedDate(new Date(order.date).toLocaleDateString());
-  }, [order.date]);
+    // Check if order.orderDate is a Firestore Timestamp
+    if (order.orderDate && typeof order.orderDate.toDate === 'function') {
+      setFormattedDate(new Date(order.orderDate.toDate()).toLocaleString());
+    }
+  }, [order.orderDate]);
 
   return (
     <AccordionItem value={`item-${order.id}`} key={order.id}>
       <AccordionTrigger>
         <div className="flex w-full items-center justify-between pr-4">
           <div className="text-left">
-            <p className="font-semibold">注文番号 #{order.id}</p>
+            <p className="font-semibold">注文番号 #{order.id.slice(0, 7)}...</p>
             <p className="text-sm text-muted-foreground">
               日付: {formattedDate}
             </p>
           </div>
-          <p className="font-semibold">
-            合計: {order.total.toFixed(0)}円
-          </p>
+          <div className='text-right'>
+            <p className="font-semibold">
+                合計: {order.totalAmount.toFixed(0)}円
+            </p>
+            <p className="text-sm text-muted-foreground">{order.status}</p>
+          </div>
         </div>
       </AccordionTrigger>
       <AccordionContent>
@@ -53,7 +63,7 @@ function OrderItem({ order }: { order: (typeof orders)[0] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {order.items.map((item) => (
+            {order.orderItems.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="hidden sm:table-cell">
                   <Image
@@ -80,31 +90,59 @@ function OrderItem({ order }: { order: (typeof orders)[0] }) {
 }
 
 export default function OrdersPage() {
-  const [isClient, setIsClient] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    if (!user) {
+        if (!authLoading) {
+            setLoading(false);
+        }
+      return;
+    }
+
+    const q = query(
+      collection(db, 'orders'),
+      where('userId', '==', user.uid),
+      orderBy('orderDate', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const ordersData = querySnapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as Order)
+      );
+      setOrders(ordersData);
+      setLoading(false);
+    }, (error) => {
+        console.error("Error fetching orders: ", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, authLoading]);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <h1 className="font-headline mb-8 text-center text-4xl font-bold">
         注文履歴
       </h1>
-      {orders.length === 0 ? (
+      {loading ? (
+         <div className="w-full space-y-4">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+         </div>
+      ) : orders.length === 0 ? (
         <div className="text-center">
           <History className="mx-auto h-24 w-24 text-muted-foreground" />
           <p className="mt-4 text-xl text-muted-foreground">過去の注文はありません。</p>
         </div>
       ) : (
         <Accordion type="single" collapsible className="w-full">
-          {isClient ? (
-            orders.map((order) => (
+            {orders.map((order) => (
               <OrderItem key={order.id} order={order} />
-            ))
-          ) : (
-            <p>注文履歴を読み込み中...</p>
-          )}
+            ))}
         </Accordion>
       )}
     </div>

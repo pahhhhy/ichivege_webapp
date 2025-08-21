@@ -14,7 +14,6 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { History, Mail, Phone, User, UserCog } from 'lucide-react';
-import { orders } from '@/lib/mock-data';
 import {
   Accordion,
   AccordionContent,
@@ -30,76 +29,111 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Image from 'next/image';
+import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import type { Order } from '@/lib/types';
 
-function OrderItem({ order }: { order: (typeof orders)[0] }) {
-  const [formattedDate, setFormattedDate] = useState('');
 
-  useEffect(() => {
-    setFormattedDate(new Date(order.date).toLocaleDateString());
-  }, [order.date]);
-
-  return (
-    <AccordionItem value={`item-${order.id}`} key={order.id}>
-      <AccordionTrigger>
-        <div className="flex w-full items-center justify-between pr-4">
-          <div className="text-left">
-            <p className="font-semibold">注文番号 #{order.id}</p>
-            <p className="text-sm text-muted-foreground">
-              日付: {formattedDate}
-            </p>
+function OrderItem({ order }: { order: Order }) {
+    const [formattedDate, setFormattedDate] = useState('');
+  
+    useEffect(() => {
+      if (order.orderDate && typeof order.orderDate.toDate === 'function') {
+        setFormattedDate(new Date(order.orderDate.toDate()).toLocaleString());
+      }
+    }, [order.orderDate]);
+  
+    return (
+      <AccordionItem value={`item-${order.id}`} key={order.id}>
+        <AccordionTrigger>
+          <div className="flex w-full items-center justify-between pr-4">
+            <div className="text-left">
+              <p className="font-semibold">注文番号 #{order.id.slice(0, 7)}...</p>
+              <p className="text-sm text-muted-foreground">
+                日付: {formattedDate}
+              </p>
+            </div>
+            <div className="text-right">
+                <p className="font-semibold">
+                    合計: {order.totalAmount.toFixed(0)}円
+                </p>
+                <p className="text-sm text-muted-foreground">{order.status}</p>
+            </div>
           </div>
-          <p className="font-semibold">
-            合計: {order.total.toFixed(0)}円
-          </p>
-        </div>
-      </AccordionTrigger>
-      <AccordionContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[80px] hidden sm:table-cell">画像</TableHead>
-              <TableHead>商品</TableHead>
-              <TableHead className="text-center">数量</TableHead>
-              <TableHead className="text-right">価格</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {order.items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="hidden sm:table-cell">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    width={50}
-                    height={50}
-                    className="rounded-md object-cover"
-                    data-ai-hint={item.dataAiHint}
-                  />
-                </TableCell>
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell className="text-center">{item.quantity}</TableCell>
-                <TableCell className="text-right">
-                  {(item.price * item.quantity).toFixed(0)}円
-                </TableCell>
+        </AccordionTrigger>
+        <AccordionContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px] hidden sm:table-cell">画像</TableHead>
+                <TableHead>商品</TableHead>
+                <TableHead className="text-center">数量</TableHead>
+                <TableHead className="text-right">価格</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </AccordionContent>
-    </AccordionItem>
-  );
-}
+            </TableHeader>
+            <TableBody>
+              {order.orderItems.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="hidden sm:table-cell">
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      width={50}
+                      height={50}
+                      className="rounded-md object-cover"
+                      data-ai-hint={item.dataAiHint}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell className="text-center">{item.quantity}</TableCell>
+                  <TableCell className="text-right">
+                    {(item.price * item.quantity).toFixed(0)}円
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </AccordionContent>
+      </AccordionItem>
+    );
+  }
 
 
 function ProfilePage() {
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    setLoadingOrders(true);
+    const q = query(
+      collection(db, 'orders'),
+      where('userId', '==', user.uid),
+      orderBy('orderDate', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const ordersData = querySnapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as Order)
+      );
+      setOrders(ordersData);
+      setLoadingOrders(false);
+    }, (error) => {
+        console.error("Error fetching orders: ", error);
+        setLoadingOrders(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   const getInitials = (email: string | null | undefined) => {
     if (!email) return '??';
@@ -165,7 +199,12 @@ function ProfilePage() {
                 <CardDescription>過去の注文一覧です。</CardDescription>
             </CardHeader>
             <CardContent>
-                {orders.length === 0 ? (
+                {loadingOrders ? (
+                    <div className="w-full space-y-4">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                    </div>
+                ) : orders.length === 0 ? (
                     <div className="text-center text-muted-foreground">
                         <p className="mt-4 text-lg">過去の注文はありません。</p>
                     </div>
