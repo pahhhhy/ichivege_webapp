@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -34,12 +34,29 @@ export function ChatInput({ chatRoomId, senderId }: ChatInputProps) {
   const onSubmit: SubmitHandler<MessageFormValues> = async (data) => {
     setIsSending(true);
     try {
+      // Use a batch write to perform multiple operations atomically
+      const batch = writeBatch(db);
+      
+      // 1. Create a new message document
       const messagesColRef = collection(db, 'chats', chatRoomId, 'messages');
-      await addDoc(messagesColRef, {
+      const newMessageRef = doc(messagesColRef); // Auto-generate ID
+      batch.set(newMessageRef, {
         text: data.text,
         senderId: senderId,
         createdAt: serverTimestamp(),
+        readBy: [senderId], // Sender has implicitly read the message
       });
+
+      // 2. Update the parent chat room document
+      const chatRoomRef = doc(db, 'chats', chatRoomId);
+      batch.update(chatRoomRef, {
+        lastMessage: data.text,
+        lastMessageAt: serverTimestamp(),
+        lastMessageSenderId: senderId,
+      });
+
+      await batch.commit();
+
       form.reset();
     } catch (error) {
       console.error('Error sending message:', error);
