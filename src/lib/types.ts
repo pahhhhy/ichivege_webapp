@@ -45,7 +45,7 @@ export interface Order {
   status: '処理中' | '発送済み' | '完了';
 }
 
-export type UserRole = '農家' | '一般ユーザー' | '飲食店';
+export type UserRole = '農家' | '一般ユーザー' | '飲食店' | '管理者';
 
 export interface UserProfile {
   uid: string;
@@ -64,4 +64,13 @@ export interface AuthContextType {
     userProfile: UserProfile | null;
     loading: boolean;
     logout: () => void;
+}
+
+export interface Post {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  createdAt: any; // Firestore Timestamp
 }

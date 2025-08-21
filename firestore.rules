@@ -4,37 +4,35 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper function to check for admin role
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == '管理者';
+    }
+
     match /users/{userId} {
-      // 認証済みユーザーは他のユーザーの情報を読める
       allow read: if request.auth != null;
-      // ユーザーは自分自身の情報のみ書き込める
       allow write: if request.auth != null && request.auth.uid == userId;
 
-      // ユーザーは自分自身のカート情報のみ読み書き、削除できる
       match /cart/{cartItemId} {
         allow read, write, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
 
     match /products/{productId} {
-      // 誰でも商品を読める
       allow read: if true;
-      // 認証済みユーザー（農家）は商品を作成できる
       allow create: if request.auth != null;
-      // 商品の更新は生産者本人、または在庫更新の場合のみ許可
-      allow update: if request.auth != null && (
-        (request.auth.uid == resource.data.producerId) ||
-        (request.resource.data.stock == resource.data.stock - 1) // Simplified for now
-      );
-      // 商品の削除は生産者本人のみ
+      allow update: if request.auth != null && (request.auth.uid == resource.data.producerId || isAdmin());
       allow delete: if request.auth != null && request.auth.uid == resource.data.producerId;
     }
 
     match /orders/{orderId} {
-        // ユーザーは自分自身の注文を作成できる
-        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-        // ユーザーは自分自身の注文のみを読める
+        allow write: if request.auth != null && request.resource.data.userId == request.auth.uid;
         allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
     }
   }
 }
