@@ -7,9 +7,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { adminDb } from '@/lib/firebase-admin'; // Use Admin SDK
+import { admin, adminDb } from '@/lib/firebase-admin'; // Use Admin SDK
 import { FieldValue } from 'firebase-admin/firestore';
-import type { Product } from '@/lib/types';
+import type { OrderItem, Product } from '@/lib/types';
 // Removed unused client-side imports
 
 const CreateOrderInputSchema = z.object({
@@ -48,48 +48,51 @@ const createOrderFlow = ai.defineFlow(
     try {
       // Use an admin transaction to ensure atomicity
       const orderId = await adminDb.runTransaction(async (transaction) => {
-        const productsToUpdate: {
-          ref: FirebaseFirestore.DocumentReference;
-          currentStock: number;
-          quantityToDecrement: number;
-        }[] = [];
-        const orderItemsWithProducer = [];
 
-        // 1. READ phase: Verify stock for all items using admin transaction
-        for (const item of cartItems) {
-          const productRef = adminDb.collection('products').doc(item.id);
-          const productDoc = await transaction.get(productRef);
+        const productRefs = cartItems.map(item => adminDb.collection('products').doc(item.id));
+        const productDocs = await transaction.getAll(...productRefs);
+        
+        const productsToUpdate: { ref: admin.firestore.DocumentReference; newStock: number }[] = [];
+        const finalOrderItems: OrderItem[] = [];
+
+        // 1. READ phase: Verify stock for all items
+        for (let i = 0; i < productDocs.length; i++) {
+          const productDoc = productDocs[i];
+          const cartItem = cartItems[i];
+
           if (!productDoc.exists) {
-            throw new Error(`商品が見つかりません: ${item.name}`);
+            throw new Error(`商品が見つかりません: ${cartItem.name}`);
           }
+          
           const productData = productDoc.data() as Product;
-          if (productData.stock < item.quantity) {
+          
+          if (productData.stock < cartItem.quantity) {
             throw new Error(
-              `在庫不足: ${item.name} (現在の在庫: ${productData.stock})`
+              `在庫不足: ${cartItem.name} (現在の在庫: ${productData.stock})`
             );
           }
+          
           productsToUpdate.push({
-            ref: productRef,
-            currentStock: productData.stock,
-            quantityToDecrement: item.quantity,
+            ref: productDoc.ref,
+            newStock: productData.stock - cartItem.quantity,
           });
-          // Add producerId to the order item
-          orderItemsWithProducer.push({
-            ...item,
-            producerId: productData.producerId, 
+
+          finalOrderItems.push({
+            ...cartItem,
+            producerId: productData.producerId,
           });
         }
-
+        
         // 2. WRITE phase
         const totalAmount = cartItems.reduce(
           (sum, item) => sum + item.price * item.quantity,
           0
         );
-        const orderRef = adminDb.collection('orders').doc(); // Auto-generate ID
+        const orderRef = adminDb.collection('orders').doc();
 
         transaction.set(orderRef, {
           userId,
-          orderItems: orderItemsWithProducer,
+          orderItems: finalOrderItems,
           totalAmount,
           status: '処理中',
           orderDate: FieldValue.serverTimestamp(),
@@ -98,15 +101,13 @@ const createOrderFlow = ai.defineFlow(
 
         // Update stock for each product
         for (const prod of productsToUpdate) {
-          const newStock = prod.currentStock - prod.quantityToDecrement;
-          transaction.update(prod.ref, { stock: newStock });
+          transaction.update(prod.ref, { stock: prod.newStock });
         }
 
         return orderRef.id;
       });
 
       // 3. Clear the user's cart using Admin SDK batch write
-      // This is safe to do after the transaction succeeds.
       const cartCollectionRef = adminDb.collection('users').doc(userId).collection('cart');
       const cartSnapshot = await cartCollectionRef.get();
       if (!cartSnapshot.empty) {
@@ -116,7 +117,6 @@ const createOrderFlow = ai.defineFlow(
         });
         await batch.commit();
       }
-
 
       return orderId;
     } catch (error) {
