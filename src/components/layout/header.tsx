@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Leaf, ShoppingCart, Menu, User, History, UserPlus, LogIn, LogOut, UserCircle } from 'lucide-react';
+import { Leaf, ShoppingCart, Menu, User, History, UserPlus, LogIn, LogOut, UserCircle, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/cart-context';
@@ -90,11 +90,14 @@ function MobileNav() {
 
 export function Header() {
   const { cartCount } = useCart();
-  const { user, loading, logout } = useAuth();
+  const { user, userProfile, loading, logout } = useAuth();
   const isMobile = useIsMobile();
 
   const getInitials = (email: string | null | undefined) => {
-    return email ? email.substring(0, 2).toUpperCase() : '??';
+    if (!email) return '??';
+    return userProfile?.username
+      ? userProfile.username.substring(0, 2).toUpperCase()
+      : email.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -136,6 +139,14 @@ export function Header() {
                     <span>プロフィール</span>
                   </Link>
                 </DropdownMenuItem>
+                {userProfile?.role === '農家' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/products/new">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      <span>新しい商品を追加</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
