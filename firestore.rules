@@ -3,53 +3,33 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    //
-    // Users collection
-    //
-    // - Anyone can create a user profile (for sign-up).
-    // - Users can only read, update, or delete their own profile.
-    //
     match /users/{userId} {
-      allow read, update, delete: if request.auth.uid == userId;
-      allow create: if request.auth.uid != null;
+      // Users can only read/write their own user document
+      allow read, write: if request.auth.uid == userId;
 
-      //
-      // Cart subcollection
-      //
-      // - Users can only read and write to their own cart.
-      //
-      match /cart/{productId} {
-        allow read, write: if request.auth.uid == userId;
+      // Cart subcollection rules
+      match /cart/{cartId} {
+        // Users can only manage their own cart
+        allow read, write, delete: if request.auth.uid == userId;
       }
     }
 
-    //
-    // Products collection
-    //
-    // - Anyone can read products.
-    // - Only the producer can create or delete their products.
-    // - The producer can update all fields of their product.
-    // - Any authenticated user can update only the stock field (for purchases).
-    //
     match /products/{productId} {
+      // Anyone can read products
       allow read: if true;
-      allow create: if request.auth.uid == request.resource.data.producerId;
-      allow delete: if request.auth.uid == resource.data.producerId;
-      allow update: if request.auth.uid == resource.data.producerId || 
-                      (request.auth.uid != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']));
+      
+      // Producers can create and delete their own products
+      allow create, delete: if request.auth.uid == request.resource.data.producerId;
+      
+      // Allow producers to update all fields, but any authenticated user to update only the stock.
+      allow update: if (request.auth.uid == resource.data.producerId) ||
+                       (request.auth.uid != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']));
     }
 
-    //
-    // Orders collection
-    //
-    // - Users can only create their own orders.
-    // - Users can only read their own orders.
-    //
     match /orders/{orderId} {
-      allow read: if request.auth.uid == resource.data.userId;
-      // Allow write (create, update, delete) if the user is creating their own order.
-      // Using 'write' instead of 'create' to support transactional sets.
+      // Users can read and write their own orders
       allow write: if request.auth.uid == request.resource.data.userId;
+      allow read: if request.auth.uid == resource.data.userId;
     }
   }
 }
