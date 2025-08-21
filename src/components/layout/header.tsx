@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Leaf, ShoppingCart, Menu, User, History, UserPlus, LogIn, LogOut, UserCircle, PlusCircle } from 'lucide-react';
+import { Leaf, ShoppingCart, Menu, User, History, UserPlus, LogIn, LogOut, UserCircle, PlusCircle, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/context/cart-context';
@@ -26,6 +26,7 @@ import React from 'react';
 const navLinks = [
   { href: '/', label: '商品一覧', icon: Leaf },
   { href: '/orders', label: '注文履歴', icon: History },
+  { href: '/board', label: 'お知らせ', icon: Megaphone },
 ];
 
 function MainNav() {
