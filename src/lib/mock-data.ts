@@ -35,6 +35,7 @@ export const products: Product[] = [
     origin: 'カリフォルニア州ソノマ郡',
     farmingMethod: '有機栽培',
     availability: '在庫あり',
+    stock: 10,
   },
   {
     id: 'prod-2',
@@ -49,6 +50,7 @@ export const products: Product[] = [
     origin: 'ニューヨーク州ハドソンバレー',
     farmingMethod: '有機栽培',
     availability: '在庫あり',
+    stock: 20,
   },
   {
     id: 'prod-3',
@@ -63,6 +65,7 @@ export const products: Product[] = [
     origin: 'テキサス州オースティン',
     farmingMethod: '水耕栽培',
     availability: '在庫あり',
+    stock: 15,
   },
   {
     id: 'prod-4',
@@ -77,6 +80,7 @@ export const products: Product[] = [
     origin: 'カリフォルニア州ソノマ郡',
     farmingMethod: '有機栽培',
     availability: '在庫あり',
+    stock: 30,
   },
   {
     id: 'prod-5',
@@ -91,6 +95,7 @@ export const products: Product[] = [
     origin: 'ニューヨーク州ハドソンバレー',
     farmingMethod: '慣行栽培',
     availability: '在庫あり',
+    stock: 25,
   },
   {
     id: 'prod-6',
@@ -105,6 +110,7 @@ export const products: Product[] = [
     origin: 'カリフォルニア州ソノマ郡',
     farmingMethod: '有機栽培',
     availability: '在庫切れ',
+    stock: 0,
   },
   {
     id: 'prod-7',
@@ -119,6 +125,7 @@ export const products: Product[] = [
     origin: 'ニューヨーク州ハドソンバレー',
     farmingMethod: '有機栽培',
     availability: '在庫あり',
+    stock: 40,
   },
   {
     id: 'prod-8',
@@ -133,6 +140,7 @@ export const products: Product[] = [
     origin: 'テキサス州オースティン',
     farmingMethod: '水耕栽培',
     availability: '在庫あり',
+    stock: 12,
   },
 ];
 
