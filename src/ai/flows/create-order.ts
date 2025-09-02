@@ -10,7 +10,6 @@ import { z } from 'zod';
 import { admin, adminDb } from '@/lib/firebase-admin'; // Use Admin SDK
 import { FieldValue } from 'firebase-admin/firestore';
 import type { OrderItem, Product } from '@/lib/types';
-// Removed unused client-side imports
 
 const CreateOrderInputSchema = z.object({
   userId: z.string().describe('The ID of the user placing the order.'),
@@ -48,11 +47,15 @@ const createOrderFlow = ai.defineFlow(
     try {
       // Use an admin transaction to ensure atomicity
       const orderId = await adminDb.runTransaction(async (transaction) => {
-
-        const productRefs = cartItems.map(item => adminDb.collection('products').doc(item.id));
+        const productRefs = cartItems.map((item) =>
+          adminDb.collection('products').doc(item.id)
+        );
         const productDocs = await transaction.getAll(...productRefs);
-        
-        const productsToUpdate: { ref: admin.firestore.DocumentReference; newStock: number }[] = [];
+
+        const productsToUpdate: {
+          ref: admin.firestore.DocumentReference;
+          newStock: number;
+        }[] = [];
         const finalOrderItems: OrderItem[] = [];
 
         // 1. READ phase: Verify stock for all items
@@ -63,15 +66,15 @@ const createOrderFlow = ai.defineFlow(
           if (!productDoc.exists) {
             throw new Error(`商品が見つかりません: ${cartItem.name}`);
           }
-          
+
           const productData = productDoc.data() as Product;
-          
+
           if (productData.stock < cartItem.quantity) {
             throw new Error(
               `在庫不足: ${cartItem.name} (現在の在庫: ${productData.stock})`
             );
           }
-          
+
           productsToUpdate.push({
             ref: productDoc.ref,
             newStock: productData.stock - cartItem.quantity,
@@ -79,10 +82,10 @@ const createOrderFlow = ai.defineFlow(
 
           finalOrderItems.push({
             ...cartItem,
-            producerId: productData.producerId,
+            producerId: productData.producerId, // Ensure producerId is included
           });
         }
-        
+
         // 2. WRITE phase
         const totalAmount = cartItems.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -90,6 +93,7 @@ const createOrderFlow = ai.defineFlow(
         );
         const orderRef = adminDb.collection('orders').doc();
 
+        // Create the new order
         transaction.set(orderRef, {
           userId,
           orderItems: finalOrderItems,
@@ -104,12 +108,17 @@ const createOrderFlow = ai.defineFlow(
           transaction.update(prod.ref, { stock: prod.newStock });
         }
 
+        // Return the new order ID from the transaction
         return orderRef.id;
       });
 
-      // 3. Clear the user's cart using Admin SDK batch write
-      const cartCollectionRef = adminDb.collection('users').doc(userId).collection('cart');
+      // 3. Post-transaction: Clear the user's cart using Admin SDK batch write
+      const cartCollectionRef = adminDb
+        .collection('users')
+        .doc(userId)
+        .collection('cart');
       const cartSnapshot = await cartCollectionRef.get();
+
       if (!cartSnapshot.empty) {
         const batch = adminDb.batch();
         cartSnapshot.docs.forEach((doc) => {
@@ -123,8 +132,11 @@ const createOrderFlow = ai.defineFlow(
       console.error('Order processing failed: ', error);
       if (error instanceof Error) {
         // Re-throw specific, user-friendly messages
-        if (error.message.includes('在庫不足') || error.message.includes('商品が見つかりません')) {
-            throw error;
+        if (
+          error.message.includes('在庫不足') ||
+          error.message.includes('商品が見つかりません')
+        ) {
+          throw error;
         }
         throw new Error('注文処理中にサーバーエラーが発生しました。');
       }
