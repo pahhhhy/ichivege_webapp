@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/auth-context';
 import { collection, query, where, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ChatRoom, ChatParticipant } from '@/lib/types';
@@ -12,6 +11,7 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
+import { Users as GroupIcon } from 'lucide-react';
 
 interface ChatSidebarProps {
   currentUser: User;
@@ -31,20 +31,17 @@ const useUnreadCounts = (chatRooms: ChatRoom[], userId: string) => {
     const [unreadCounts, setUnreadCounts] = useState<{ [key: string]: number }>({});
   
     useEffect(() => {
-      if (!userId) return;
+      if (!userId || chatRooms.length === 0) return;
   
       const unsubscribes = chatRooms.map(room => {
         const lastReadTimestamp = room.lastReadBy?.[userId] || new Timestamp(0, 0);
         
-        // Query for all messages after the last read timestamp.
-        // We will filter by sender on the client-side to avoid composite index requirements.
         const q = query(
           collection(db, 'chats', room.id, 'messages'),
           where('createdAt', '>', lastReadTimestamp)
         );
   
         return onSnapshot(q, (snapshot) => {
-          // Filter out messages sent by the current user on the client.
           const unreadCount = snapshot.docs.filter(doc => doc.data().senderId !== userId).length;
           
           setUnreadCounts(prevCounts => ({
@@ -78,12 +75,13 @@ export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatS
       const rooms = querySnapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as ChatRoom)
       );
-      // Sort on the client-side to avoid composite index
+      
       const sortedRooms = rooms.sort((a, b) => {
         const timeA = a.lastMessageAt?.toMillis() || a.createdAt?.toMillis() || 0;
         const timeB = b.lastMessageAt?.toMillis() || b.createdAt?.toMillis() || 0;
         return timeB - timeA;
       });
+
       setChatRooms(sortedRooms);
       setLoading(false);
     });
@@ -114,6 +112,10 @@ export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatS
             const unreadCount = unreadCounts[room.id] || 0;
             const lastMessageText = room.lastMessage || 'まだメッセージはありません';
 
+            const isGroup = room.isGroup;
+            const displayName = isGroup ? room.groupName : otherParticipant?.username;
+            const displayInitials = isGroup ? getInitials(room.groupName) : getInitials(otherParticipant?.username);
+
             return (
                 <button
                     key={room.id}
@@ -124,10 +126,11 @@ export function ChatSidebar({ currentUser, selectedChatId, onChatSelect }: ChatS
                     )}
                 >
                     <Avatar className="h-10 w-10">
-                        <AvatarFallback>{getInitials(otherParticipant?.username)}</AvatarFallback>
+                        {isGroup ? <GroupIcon className="h-5 w-5" /> : null}
+                        <AvatarFallback>{displayInitials}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 truncate">
-                        <div className="font-semibold">{otherParticipant?.username}</div>
+                        <div className="font-semibold">{displayName}</div>
                         <p className={cn("text-xs", unreadCount > 0 ? "text-foreground font-bold" : "text-muted-foreground")}>
                            {lastMessageText.length > 15 ? `${lastMessageText.substring(0, 15)}...` : lastMessageText}
                         </p>
