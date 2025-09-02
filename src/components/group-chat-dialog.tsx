@@ -32,6 +32,7 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface GroupChatDialogProps {
   currentUser: UserProfile;
