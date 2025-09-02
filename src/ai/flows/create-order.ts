@@ -40,6 +40,11 @@ const createOrderFlow = ai.defineFlow(
     outputSchema: z.string(), // Returns the new order ID
   },
   async ({ userId, cartItems }) => {
+    if (!adminDb) {
+      throw new Error(
+        'Firebase Admin SDK is not initialized. Check server configuration.'
+      );
+    }
     if (cartItems.length === 0) {
       throw new Error('カートが空です。');
     }
@@ -58,7 +63,7 @@ const createOrderFlow = ai.defineFlow(
         }[] = [];
         const finalOrderItems: OrderItem[] = [];
 
-        // 1. READ phase: Verify stock for all items
+        // 1. READ & VALIDATE phase: Verify stock for all items
         for (let i = 0; i < productDocs.length; i++) {
           const productDoc = productDocs[i];
           const cartItem = cartItems[i];
@@ -131,7 +136,7 @@ const createOrderFlow = ai.defineFlow(
     } catch (error) {
       console.error('Order processing failed: ', error);
       if (error instanceof Error) {
-        // Re-throw specific, user-friendly messages
+        // Re-throw specific, user-friendly messages from the transaction
         if (
           error.message.includes('在庫不足') ||
           error.message.includes('商品が見つかりません')
