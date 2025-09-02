@@ -21,9 +21,10 @@ type MessageFormValues = z.infer<typeof messageSchema>;
 interface ChatInputProps {
   chatRoomId: string;
   senderId: string;
+  senderName: string;
 }
 
-export function ChatInput({ chatRoomId, senderId }: ChatInputProps) {
+export function ChatInput({ chatRoomId, senderId, senderName }: ChatInputProps) {
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
   const form = useForm<MessageFormValues>({
@@ -34,20 +35,18 @@ export function ChatInput({ chatRoomId, senderId }: ChatInputProps) {
   const onSubmit: SubmitHandler<MessageFormValues> = async (data) => {
     setIsSending(true);
     try {
-      // Use a batch write to perform multiple operations atomically
       const batch = writeBatch(db);
       
-      // 1. Create a new message document
       const messagesColRef = collection(db, 'chats', chatRoomId, 'messages');
-      const newMessageRef = doc(messagesColRef); // Auto-generate ID
+      const newMessageRef = doc(messagesColRef);
       batch.set(newMessageRef, {
         text: data.text,
         senderId: senderId,
+        senderName: senderName,
         createdAt: serverTimestamp(),
-        readBy: [senderId], // Sender has implicitly read the message
+        readBy: [senderId],
       });
 
-      // 2. Update the parent chat room document
       const chatRoomRef = doc(db, 'chats', chatRoomId);
       batch.update(chatRoomRef, {
         lastMessage: data.text,

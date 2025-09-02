@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { collection, query, orderBy, onSnapshot, Timestamp, writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Message } from '@/lib/types';
+import type { Message, ChatRoom } from '@/lib/types';
 import { User } from 'firebase/auth';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,7 +13,7 @@ import { format, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 interface ChatMessagesProps {
-  chatRoomId: string;
+  chatRoom: ChatRoom;
   currentUser: User;
 }
 
@@ -27,30 +27,27 @@ const formatDateSeparator = (timestamp: Timestamp): string => {
 }
 
 
-export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
+export function ChatMessages({ chatRoom, currentUser }: ChatMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  // Function to mark messages as read
   const markMessagesAsRead = async (messagesToMark: Message[]) => {
     if (messagesToMark.length === 0) return;
 
     const batch = writeBatch(db);
     
-    // Update readBy field in message documents for unread messages sent by others
     messagesToMark.forEach(msg => {
         if (msg.senderId !== currentUser.uid) {
-            const msgRef = doc(db, 'chats', chatRoomId, 'messages', msg.id);
+            const msgRef = doc(db, 'chats', chatRoom.id, 'messages', msg.id);
             batch.update(msgRef, {
                 readBy: [...(msg.readBy || []), currentUser.uid]
             });
         }
     });
     
-    // Update lastReadBy timestamp in chat room document
-    const chatRoomRef = doc(db, 'chats', chatRoomId);
+    const chatRoomRef = doc(db, 'chats', chatRoom.id);
     batch.update(chatRoomRef, {
         [`lastReadBy.${currentUser.uid}`]: Timestamp.now()
     });
@@ -60,8 +57,9 @@ export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
 
 
   useEffect(() => {
+    setLoading(true);
     const q = query(
-      collection(db, 'chats', chatRoomId, 'messages'),
+      collection(db, 'chats', chatRoom.id, 'messages'),
       orderBy('createdAt', 'asc')
     );
     
@@ -72,13 +70,11 @@ export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
       setMessages(msgs);
       setLoading(false);
       
-      // Identify unread messages and mark them as read
       const unreadMessages = msgs.filter(msg => msg.senderId !== currentUser.uid && (!msg.readBy || !msg.readBy.includes(currentUser.uid)));
       if (unreadMessages.length > 0) {
         markMessagesAsRead(unreadMessages);
       } else {
-        // Even if there are no new messages, we update the last read time to now.
-        const chatRoomRef = doc(db, 'chats', chatRoomId);
+        const chatRoomRef = doc(db, 'chats', chatRoom.id);
         const batch = writeBatch(db);
         batch.update(chatRoomRef, {
             [`lastReadBy.${currentUser.uid}`]: Timestamp.now()
@@ -88,10 +84,9 @@ export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
     });
 
     return () => unsubscribe();
-  }, [chatRoomId, currentUser.uid]);
+  }, [chatRoom.id, currentUser.uid]);
 
   useEffect(() => {
-    // Scroll to bottom when new messages arrive
     if (viewportRef.current) {
       viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
     }
@@ -116,6 +111,8 @@ export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
                 (message.createdAt && messages[index-1].createdAt && 
                  !isSameDay(message.createdAt.toDate(), messages[index-1].createdAt.toDate()));
             
+            const isMe = message.senderId === currentUser.uid;
+            
             return (
                 <div key={message.id}>
                     {showDateSeparator && message.createdAt && (
@@ -127,15 +124,20 @@ export function ChatMessages({ chatRoomId, currentUser }: ChatMessagesProps) {
                     )}
                     <div
                         className={cn(
-                            'flex items-end gap-2',
-                            message.senderId === currentUser.uid ? 'justify-end' : 'justify-start'
+                            'flex flex-col gap-1',
+                            isMe ? 'items-end' : 'items-start'
                         )}
                     >
-                        <div className={cn('flex items-end gap-2', message.senderId === currentUser.uid ? 'flex-row-reverse' : 'flex-row')}>
+                         {chatRoom.isGroup && !isMe && (
+                            <span className="text-xs text-muted-foreground ml-2">
+                                {message.senderName || 'Unknown User'}
+                            </span>
+                        )}
+                        <div className={cn('flex items-end gap-2', isMe ? 'flex-row-reverse' : 'flex-row')}>
                             <div
                                 className={cn(
                                 'max-w-xs rounded-lg px-3 py-2 md:max-w-md',
-                                message.senderId === currentUser.uid
+                                isMe
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-muted'
                                 )}

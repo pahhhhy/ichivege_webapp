@@ -11,9 +11,11 @@ import type { ChatRoom } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MessageSquare, Users } from 'lucide-react';
 import { UserSearchDialog } from '@/components/user-search-dialog';
+import { ChatHeader } from '@/components/chat/chat-header';
+import { GroupChatDialog } from '@/components/group-chat-dialog';
 
 export default function ChatPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState<ChatRoom | null>(null);
 
@@ -23,7 +25,7 @@ export default function ChatPage() {
     }
   }, [user, authLoading, router]);
 
-  if (authLoading || !user) {
+  if (authLoading || !user || !userProfile) {
     return (
       <div className="flex h-[calc(100vh-8rem)]">
         <aside className="hidden w-1/4 flex-col border-r p-4 md:flex">
@@ -48,7 +50,10 @@ export default function ChatPage() {
       <aside className="hidden w-1/4 flex-col border-r md:flex">
         <div className="flex items-center justify-between border-b p-4">
             <h2 className="text-xl font-bold">チャット</h2>
-            <UserSearchDialog currentUser={user} onChatRoomSelect={setSelectedChat} />
+            <div className='flex items-center gap-1'>
+                <UserSearchDialog currentUser={user} onChatRoomSelect={setSelectedChat} />
+                <GroupChatDialog currentUser={userProfile} onChatRoomSelect={setSelectedChat} />
+            </div>
         </div>
         <ChatSidebar
           currentUser={user}
@@ -59,13 +64,9 @@ export default function ChatPage() {
       <main className="flex flex-1 flex-col">
         {selectedChat ? (
           <>
-            <div className="border-b p-4">
-              <h3 className="text-lg font-semibold">
-                {selectedChat.participants.find(p => p.uid !== user.uid)?.username || 'Chat'}
-              </h3>
-            </div>
-            <ChatMessages chatRoomId={selectedChat.id} currentUser={user} />
-            <ChatInput chatRoomId={selectedChat.id} senderId={user.uid} />
+            <ChatHeader chatRoom={selectedChat} currentUser={user} />
+            <ChatMessages chatRoom={selectedChat} currentUser={user} />
+            <ChatInput chatRoomId={selectedChat.id} senderId={user.uid} senderName={userProfile.username} />
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">

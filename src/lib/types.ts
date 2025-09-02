@@ -93,6 +93,11 @@ export interface ChatRoom {
     lastMessage: string;
     lastMessageAt: Timestamp;
     lastMessageSenderId?: string;
+    // Group chat specific fields
+    isGroup?: boolean;
+    groupName?: string;
+    groupIcon?: string; // Could be an emoji or a URL to an image
+    groupAdmin?: string;
     // Map of userId to their last read timestamp
     lastReadby?: { [key: string]: Timestamp }; 
     lastReadBy?: { [key: string]: Timestamp };
@@ -102,6 +107,7 @@ export interface Message {
     id: string;
     text: string;
     senderId: string;
+    senderName?: string; // For group chats
     createdAt: Timestamp;
     readBy: string[];
 }
