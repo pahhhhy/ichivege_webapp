@@ -38,7 +38,7 @@ const formSchema = z.object({
   category: z.enum(['葉物野菜', '根菜', 'アブラナ科', '果菜']),
   price: z.coerce.number().min(0, '価格は0以上で入力してください。'),
   stock: z.coerce.number().min(0, '在庫数は0以上で入力してください。'),
-  description: z.string().min(10, '詳細は10文字以上で入力してください。').max(500),
+  description: z.string().min(10, '詳細は10文字以上で入力してください。'),
   origin: z.string().min(2, '産地は2文字以上で入力してください。'),
   farmingMethod: z.enum(['有機栽培', '慣行栽培', '水耕栽培']),
   image: z
