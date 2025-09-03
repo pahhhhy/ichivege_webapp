@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -23,9 +24,14 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const formSchema = z.object({
   name: z.string().min(2, '名前は2文字以上で入力してください。'),
@@ -35,6 +41,14 @@ const formSchema = z.object({
   description: z.string().min(10, '詳細は10文字以上で入力してください。').max(500),
   origin: z.string().min(2, '産地は2文字以上で入力してください。'),
   farmingMethod: z.enum(['有機栽培', '慣行栽培', '水耕栽培']),
+  image: z
+    .custom<FileList>()
+    .refine((files) => files?.length === 1, '画像は必須です。')
+    .refine((files) => files?.[0]?.size <= 5000000, `画像サイズは5MBまでです。`)
+    .refine(
+      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      "対応しているファイル形式は .jpg, .jpeg, .png, .webp です。"
+    ),
 });
 
 interface ProductAddFormProps {
@@ -44,6 +58,7 @@ interface ProductAddFormProps {
 export function ProductAddForm({ producerId }: ProductAddFormProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -58,13 +73,27 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
     try {
+      // 1. Upload image to Firebase Storage
+      const imageFile = values.image[0];
+      const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
+      await uploadBytes(storageRef, imageFile);
+      const imageUrl = await getDownloadURL(storageRef);
+
+      // 2. Add product data to Firestore
       await addDoc(collection(db, 'products'), {
-        ...values,
+        name: values.name,
+        category: values.category,
+        price: values.price,
+        stock: values.stock,
+        description: values.description,
+        origin: values.origin,
+        farmingMethod: values.farmingMethod,
         availability: values.stock > 0 ? '在庫あり' : '在庫切れ',
         producerId: producerId,
         currency: 'JPY',
-        image: 'https://placehold.co/600x400.png', // Placeholder image
+        image: imageUrl, // Use uploaded image URL
         dataAiHint: `${values.name} vegetable`,
         createdAt: serverTimestamp(),
       });
@@ -75,6 +104,7 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
       });
       form.reset();
       router.push('/');
+
     } catch (error) {
       console.error('Error adding product:', error);
       toast({
@@ -82,6 +112,8 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
         description: '商品の追加中にエラーが発生しました。',
         variant: 'destructive',
       });
+    } finally {
+        setIsSubmitting(false);
     }
   }
 
@@ -97,6 +129,22 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
               <FormControl>
                 <Input placeholder="例：新鮮なトマト" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="image"
+          render={({ field: { onChange, value, ...rest } }) => (
+            <FormItem>
+              <FormLabel>商品画像</FormLabel>
+              <FormControl>
+                <Input type="file" accept="image/*" onChange={(e) => onChange(e.target.files)} {...rest} />
+              </FormControl>
+              <FormDescription>
+                JPEG, PNG, WEBP形式の画像をアップロードできます (最大5MB)。
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -202,8 +250,9 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" size="lg">
-          商品を登録する
+        <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSubmitting ? '登録中...' : '商品を登録する'}
         </Button>
       </form>
     </Form>
