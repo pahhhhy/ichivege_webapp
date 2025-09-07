@@ -9,7 +9,9 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { admin, adminDb } from '@/lib/firebase-admin'; // Use Admin SDK
 import { FieldValue } from 'firebase-admin/firestore';
-import type { OrderItem, Product } from '@/lib/types';
+import type { OrderItem, Product, UserProfile } from '@/lib/types';
+import { sendPushMessage } from '@/lib/line';
+import type { TextMessage } from '@line/bot-sdk';
 
 const CreateOrderInputSchema = z.object({
   userId: z.string().describe('The ID of the user placing the order.'),
@@ -130,6 +132,25 @@ const createOrderFlow = ai.defineFlow(
           batch.delete(doc.ref);
         });
         await batch.commit();
+      }
+
+      // 4. Post-transaction: Send LINE notification
+      try {
+        const userDocRef = adminDb.collection('users').doc(userId);
+        const userDoc = await userDocRef.get();
+        if (userDoc.exists) {
+          const userProfile = userDoc.data() as UserProfile;
+          if (userProfile.lineUserId) {
+            const message: TextMessage = {
+              type: 'text',
+              text: `${userProfile.username}様\n\nご注文ありがとうございます！\n商品が発送されるまで今しばらくお待ちください。\n\n注文番号: ${orderId}`,
+            };
+            await sendPushMessage(userProfile.lineUserId, [message]);
+          }
+        }
+      } catch (lineError) {
+        // Log the error but don't fail the entire transaction
+        console.error(`Failed to send LINE notification for order ${orderId}:`, lineError);
       }
 
       return orderId;
