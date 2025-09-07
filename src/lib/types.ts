@@ -61,6 +61,8 @@ export interface UserProfile {
   name?: string;
   location?: string;
   bio?: string;
+  // For LINE integration
+  lineUserId?: string;
 }
 
 export interface AuthContextType {

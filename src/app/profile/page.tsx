@@ -33,6 +33,8 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 import { ProfileEditDialog } from '@/components/profile-edit-dialog';
+import { LineConnectButton } from '@/components/line-connect-button';
+import { Separator } from '@/components/ui/separator';
 
 
 function OrderItem({ order }: { order: Order }) {
@@ -209,6 +211,16 @@ function ProfilePage() {
                 <MapPin className="h-5 w-5 text-muted-foreground" />
                 <span className="font-medium">{userProfile.address || '未設定'}</span>
               </div>
+          </CardContent>
+          <Separator className="my-4"/>
+          <CardContent>
+            <div className="space-y-2">
+                <h3 className="font-semibold">LINE連携</h3>
+                <p className="text-sm text-muted-foreground">
+                    LINEと連携すると、注文完了時などに通知を受け取ることができます。
+                </p>
+                <LineConnectButton />
+            </div>
           </CardContent>
         </Card>
         
