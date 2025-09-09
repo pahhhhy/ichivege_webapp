@@ -2,8 +2,8 @@
 'use client';
 
 import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
 import {
   Card,
   CardContent,
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, Phone, UserCog, MapPin, Building } from 'lucide-react';
+import { History, Phone, UserCog, MapPin, Building, Loader2 } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -35,6 +35,7 @@ import type { Order } from '@/lib/types';
 import { ProfileEditDialog } from '@/components/profile-edit-dialog';
 import { LineConnectButton } from '@/components/line-connect-button';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 
 function OrderItem({ order }: { order: Order }) {
@@ -102,17 +103,32 @@ function OrderItem({ order }: { order: Order }) {
   }
 
 
-function ProfilePage() {
-  const { user, userProfile, loading, refreshUserProfile } = useAuth();
+function ProfilePageContent() {
+  const { user, userProfile, loading, refreshUserProfile, isRefreshing } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
+  
+  useEffect(() => {
+    const lineConnectStatus = searchParams.get('line_connect');
+    if (lineConnectStatus === 'success') {
+      toast({
+        title: '成功',
+        description: 'LINEとの連携が完了しました。',
+      });
+      refreshUserProfile();
+      // URLからクエリパラメータを削除してクリーンな状態にする
+      router.replace('/profile', { scroll: false });
+    }
+  }, [searchParams, refreshUserProfile, router, toast]);
 
   useEffect(() => {
     if (!user) {
@@ -219,7 +235,14 @@ function ProfilePage() {
                 <p className="text-sm text-muted-foreground">
                     LINEと連携すると、注文完了時などに通知を受け取ることができます。
                 </p>
-                <LineConnectButton />
+                {isRefreshing ? (
+                    <Button disabled>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        更新中...
+                    </Button>
+                ) : (
+                    <LineConnectButton />
+                )}
             </div>
           </CardContent>
         </Card>
@@ -257,4 +280,10 @@ function ProfilePage() {
   );
 }
 
-export default ProfilePage;
+export default function ProfilePage() {
+    return (
+        <Suspense fallback={<div className="container mx-auto px-4 py-8 text-center">読み込み中...</div>}>
+            <ProfilePageContent />
+        </Suspense>
+    )
+}

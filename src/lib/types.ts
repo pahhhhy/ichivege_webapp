@@ -69,6 +69,7 @@ export interface AuthContextType {
     user: User | null;
     userProfile: UserProfile | null;
     loading: boolean;
+    isRefreshing: boolean;
     logout: () => void;
     refreshUserProfile: () => Promise<void>;
 }
