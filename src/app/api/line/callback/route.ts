@@ -5,12 +5,13 @@ import { db } from '@/lib/firebase';
 import { getLineProfile } from '@/lib/line';
 import getConfig from 'next/config';
 
-const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
+const { serverRuntimeConfig } = getConfig();
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
+  const sessionState = searchParams.get('session_state'); // LINE may send this
 
   // In a real app, you MUST validate the state against a value stored in the user's session.
   // For this example, we assume the `state` parameter is the Firebase UID, which is a temporary secure value.
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
         grant_type: 'authorization_code',
         code: code,
         redirect_uri: `${new URL(request.url).origin}/api/line/callback`,
-        client_id: publicRuntimeConfig.lineLoginChannelId!,
+        client_id: serverRuntimeConfig.lineLoginChannelId!,
         client_secret: serverRuntimeConfig.lineChannelSecret!,
       }),
     });
