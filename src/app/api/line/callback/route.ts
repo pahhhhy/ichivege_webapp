@@ -7,25 +7,27 @@ import { getLineProfile } from '@/lib/line';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const state = searchParams.get('state');
+  const state = searchParams.get('state'); // Firebase UID
   const sessionState = searchParams.get('session_state'); // LINE may send this
 
-  // In a real app, you MUST validate the state against a value stored in the user's session.
-  // For this example, we assume the `state` parameter is the Firebase UID, which is a temporary secure value.
   if (!code || !state) {
     console.error('Invalid callback request: missing code or state');
     return NextResponse.redirect(new URL('/profile?error=bad_request', request.url));
   }
 
+  // In a real app, you should validate the state against a value stored in the user's session.
+  // Here, we trust the state as it's a short-lived secure value (the user's UID).
   const firebaseUid = state; 
 
-  const lineLoginChannelId = process.env.NEXT_PUBLIC_LINE_LOGIN_CHANNEL_ID;
+  const lineLoginChannelId = process.env.LINE_LOGIN_CHANNEL_ID;
   const lineChannelSecret = process.env.LINE_CHANNEL_SECRET;
-
+  
   if (!lineLoginChannelId || !lineChannelSecret) {
-    console.error('LINE environment variables are not set.');
+    console.error('LINE environment variables for login are not set.');
     return NextResponse.redirect(new URL('/profile?error=config_error', request.url));
   }
+  
+  const redirectUri = `${new URL(request.url).origin}/api/line/callback`;
 
   try {
     const tokenResponse = await fetch('https://api.line.me/oauth2/v2.1/token', {
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code: code,
-        redirect_uri: `${new URL(request.url).origin}/api/line/callback`,
+        redirect_uri: redirectUri,
         client_id: lineLoginChannelId,
         client_secret: lineChannelSecret,
       }),
@@ -43,7 +45,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) {
         const errorBody = await tokenResponse.json();
         console.error('LINE token exchange error:', errorBody);
-        throw new Error(errorBody.error_description || 'Failed to get access token from LINE.');
+        throw new Error(`Failed to get access token from LINE. Reason: ${errorBody.error_description || 'Unknown'}`);
     }
 
     const tokenData = await tokenResponse.json();
