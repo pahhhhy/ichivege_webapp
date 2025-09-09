@@ -1,7 +1,6 @@
 
 'use server';
 
-import 'dotenv/config';
 import * as admin from 'firebase-admin';
 
 let adminDb: admin.firestore.Firestore | undefined;
@@ -22,17 +21,17 @@ function initializeAdminApp() {
         });
         adminDb = admin.firestore();
         initialized = true;
-        console.log('✅ Firebase Admin SDK successfully initialized.');
       } catch (error) {
-        console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:', error);
+        console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Ensure it is a valid JSON string.', error);
       }
     } else {
       adminDb = admin.firestore();
       initialized = true;
     }
   } else {
+    // This warning is helpful for developers to know the admin SDK is not configured.
     console.warn(
-      'Firebase Admin SDK not initialized. FIREBASE_SERVICE_ACCOUNT_JSON is not set.'
+      'Firebase Admin SDK not initialized. The `FIREBASE_SERVICE_ACCOUNT_JSON` environment variable is not set. Server-side features requiring admin privileges will not work.'
     );
   }
 }
