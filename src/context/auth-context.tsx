@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
   const fetchUserProfile = useCallback(async (currentUser: User | null) => {
@@ -32,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true);
       setUser(currentUser);
       await fetchUserProfile(currentUser);
       setLoading(false);
@@ -49,12 +51,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshUserProfile = useCallback(async () => {
     if (user) {
-      await fetchUserProfile(user);
+      setIsRefreshing(true);
+      try {
+        await fetchUserProfile(user);
+      } catch (error) {
+        console.error("Failed to refresh user profile", error);
+      } finally {
+        setIsRefreshing(false);
+      }
     }
   }, [user, fetchUserProfile]);
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, logout, refreshUserProfile }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, isRefreshing, logout, refreshUserProfile }}>
       {children}
     </AuthContext.Provider>
   );
