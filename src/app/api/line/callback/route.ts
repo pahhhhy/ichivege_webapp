@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
 
   if (!code || !state) {
     console.error('Invalid callback request: missing code or state');
-    return NextResponse.redirect(new URL('/profile?error=bad_request', request.url));
+    const errorUrl = new URL('/profile', request.url);
+    errorUrl.searchParams.set('error', 'bad_request');
+    return NextResponse.redirect(errorUrl);
   }
 
-  // In a real app, you should validate the state against a value stored in the user's session.
-  // Here, we trust the state as it's a short-lived secure value (the user's UID).
   const firebaseUid = state; 
 
   const lineLoginChannelId = process.env.LINE_LOGIN_CHANNEL_ID;
@@ -24,10 +24,13 @@ export async function GET(request: NextRequest) {
   
   if (!lineLoginChannelId || !lineChannelSecret) {
     console.error('LINE environment variables for login are not set.');
-    return NextResponse.redirect(new URL('/profile?error=config_error', request.url));
+    const errorUrl = new URL('/profile', request.url);
+    errorUrl.searchParams.set('error', 'config_error');
+    return NextResponse.redirect(errorUrl);
   }
   
-  const redirectUri = `${new URL(request.url).origin}/api/line/callback`;
+  // Build the redirect URI for the token exchange
+  const redirectUriForToken = new URL('/api/line/callback', request.url).href;
 
   try {
     const tokenResponse = await fetch('https://api.line.me/oauth2/v2.1/token', {
@@ -36,7 +39,7 @@ export async function GET(request: NextRequest) {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code: code,
-        redirect_uri: redirectUri,
+        redirect_uri: redirectUriForToken,
         client_id: lineLoginChannelId,
         client_secret: lineChannelSecret,
       }),
@@ -51,7 +54,6 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
     
-    // Get user profile from LINE
     const lineProfile = await getLineProfile(accessToken);
     const lineUserId = lineProfile.userId;
 
@@ -59,17 +61,21 @@ export async function GET(request: NextRequest) {
         throw new Error('Could not retrieve LINE User ID.');
     }
 
-    // Save lineUserId to user's Firestore document
     const userDocRef = doc(db, 'users', firebaseUid);
     await updateDoc(userDocRef, {
       lineUserId: lineUserId,
     });
 
-    // Redirect to profile page with success message
-    return NextResponse.redirect(new URL('/profile?line_connect=success', request.url));
+    // Redirect to profile page with a clean success message
+    const successUrl = new URL('/profile', request.url);
+    successUrl.searchParams.set('line_connect', 'success');
+    return NextResponse.redirect(successUrl);
+
   } catch (error) {
     console.error('LINE callback handling failed:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during LINE login.';
-    return NextResponse.redirect(new URL(`/profile?error=${encodeURIComponent(errorMessage)}`, request.url));
+    const errorUrl = new URL('/profile', request.url);
+    errorUrl.searchParams.set('error', encodeURIComponent(errorMessage));
+    return NextResponse.redirect(errorUrl);
   }
 }
