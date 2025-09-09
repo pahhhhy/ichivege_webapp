@@ -28,9 +28,12 @@ const nextConfig: NextConfig = {
   serverRuntimeConfig: {
     // Will only be available on the server side
     lineChannelSecret: process.env.LINE_CHANNEL_SECRET,
+    lineLoginChannelId: process.env.LINE_LOGIN_CHANNEL_ID,
   },
-  // publicRuntimeConfig is not needed in App Router
-  // Use process.env.NEXT_PUBLIC_... directly for client-side vars
+  publicRuntimeConfig: {
+    // Will be available on both server and client
+    lineLoginChannelId: process.env.NEXT_PUBLIC_LINE_LOGIN_CHANNEL_ID,
+  },
 };
 
 export default nextConfig;
