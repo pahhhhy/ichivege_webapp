@@ -3,9 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getLineProfile } from '@/lib/line';
-import getConfig from 'next/config';
-
-const { serverRuntimeConfig } = getConfig();
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -22,6 +19,14 @@ export async function GET(request: NextRequest) {
 
   const firebaseUid = state; 
 
+  const lineLoginChannelId = process.env.NEXT_PUBLIC_LINE_LOGIN_CHANNEL_ID;
+  const lineChannelSecret = process.env.LINE_CHANNEL_SECRET;
+
+  if (!lineLoginChannelId || !lineChannelSecret) {
+    console.error('LINE environment variables are not set.');
+    return NextResponse.redirect(new URL('/profile?error=config_error', request.url));
+  }
+
   try {
     const tokenResponse = await fetch('https://api.line.me/oauth2/v2.1/token', {
       method: 'POST',
@@ -30,8 +35,8 @@ export async function GET(request: NextRequest) {
         grant_type: 'authorization_code',
         code: code,
         redirect_uri: `${new URL(request.url).origin}/api/line/callback`,
-        client_id: serverRuntimeConfig.lineLoginChannelId!,
-        client_secret: serverRuntimeConfig.lineChannelSecret!,
+        client_id: lineLoginChannelId,
+        client_secret: lineChannelSecret,
       }),
     });
 
