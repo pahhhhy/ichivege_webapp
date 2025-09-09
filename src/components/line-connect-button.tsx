@@ -45,7 +45,9 @@ export function LineConnectButton() {
     if (!user) return;
     try {
         const userDocRef = doc(db, 'users', user.uid);
-        // Set lineUserId to null to effectively disconnect
+        // To "remove" the field, we set it to null. 
+        // Using FieldValue.delete() is for server-side operations (like Cloud Functions).
+        // On the client, setting to null is the common practice.
         await updateDoc(userDocRef, {
             lineUserId: null
         });

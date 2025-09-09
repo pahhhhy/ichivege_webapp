@@ -8,7 +8,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state'); // Firebase UID
-  const sessionState = searchParams.get('session_state'); // LINE may send this
 
   if (!code || !state) {
     console.error('Invalid callback request: missing code or state');
@@ -29,7 +28,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(errorUrl);
   }
   
-  // Build the redirect URI for the token exchange
+  // Build the redirect URI for the token exchange. It must match exactly what's in the console.
   const redirectUriForToken = new URL('/api/line/callback', request.url).href;
 
   try {
@@ -62,6 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userDocRef = doc(db, 'users', firebaseUid);
+    // Correctly update the document with only the lineUserId field.
     await updateDoc(userDocRef, {
       lineUserId: lineUserId,
     });
