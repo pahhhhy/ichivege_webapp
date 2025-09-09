@@ -6,9 +6,6 @@ import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import getConfig from 'next/config';
-
-const { publicRuntimeConfig } = getConfig();
 
 export function LineConnectButton() {
   const { user, userProfile, refreshUserProfile } = useAuth();
@@ -17,12 +14,24 @@ export function LineConnectButton() {
   const handleConnect = () => {
     if (!user) return;
     
+    const lineLoginChannelId = process.env.NEXT_PUBLIC_LINE_LOGIN_CHANNEL_ID;
+
+    if (!lineLoginChannelId) {
+      console.error('LINE Login Channel ID is not configured.');
+      toast({
+        title: '設定エラー',
+        description: 'LINE連携機能が正しく設定されていません。',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     // Use the user's UID as the state parameter for security
     const state = user.uid;
 
     const lineLoginUrl = new URL('https://access.line.me/oauth2/v2.1/authorize');
     lineLoginUrl.searchParams.set('response_type', 'code');
-    lineLoginUrl.searchParams.set('client_id', publicRuntimeConfig.lineLoginChannelId!);
+    lineLoginUrl.searchParams.set('client_id', lineLoginChannelId);
     lineLoginUrl.searchParams.set('redirect_uri', `${window.location.origin}/api/line/callback`);
     lineLoginUrl.searchParams.set('state', state);
     lineLoginUrl.searchParams.set('scope', 'profile openid');
