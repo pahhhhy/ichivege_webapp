@@ -25,9 +25,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  env: {
-    NEXT_PUBLIC_LINE_LOGIN_CHANNEL_ID: process.env.NEXT_PUBLIC_LINE_LOGIN_CHANNEL_ID,
-  }
+  serverRuntimeConfig: {
+    // Will only be available on the server side
+    lineChannelSecret: process.env.LINE_CHANNEL_SECRET,
+  },
+  publicRuntimeConfig: {
+    // Will be available on both server and client
+    lineLoginChannelId: process.env.NEXT_PUBLIC_LINE_LOGIN_CHANNEL_ID,
+  },
 };
 
 export default nextConfig;
