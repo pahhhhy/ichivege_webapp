@@ -32,6 +32,8 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 5000000; // 5MB
 
 const formSchema = z.object({
   name: z.string().min(2, '名前は2文字以上で入力してください。'),
@@ -41,12 +43,16 @@ const formSchema = z.object({
   description: z.string().min(10, '詳細は10文字以上で入力してください。'),
   origin: z.string().min(2, '産地は2文字以上で入力してください。'),
   farmingMethod: z.enum(['有機栽培', '慣行栽培', '水耕栽培']),
-  image: z
+  images: z
     .custom<FileList>()
-    .refine((files) => files?.length === 1, '画像は必須です。')
-    .refine((files) => files?.[0]?.size <= 5000000, `画像サイズは5MBまでです。`)
+    .refine((files) => files && files.length > 0, '画像は1枚以上必須です。')
+    .refine((files) => files && files.length <= MAX_FILES, `画像は${MAX_FILES}枚までです。`)
     .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      (files) => Array.from(files ?? []).every((file) => file.size <= MAX_FILE_SIZE),
+      `各画像サイズは5MBまでです。`
+    )
+    .refine(
+      (files) => Array.from(files ?? []).every((file) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
       "対応しているファイル形式は .jpg, .jpeg, .png, .webp です。"
     ),
 });
@@ -75,11 +81,15 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      // 1. Upload image to Firebase Storage
-      const imageFile = values.image[0];
-      const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
-      await uploadBytes(storageRef, imageFile);
-      const imageUrl = await getDownloadURL(storageRef);
+      // 1. Upload images to Firebase Storage
+      const imageFiles = Array.from(values.images);
+      const imageUrls = await Promise.all(
+        imageFiles.map(async (file) => {
+          const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
+          await uploadBytes(storageRef, file);
+          return await getDownloadURL(storageRef);
+        })
+      );
 
       // 2. Add product data to Firestore
       await addDoc(collection(db, 'products'), {
@@ -93,7 +103,7 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
         availability: values.stock > 0 ? '在庫あり' : '在庫切れ',
         producerId: producerId,
         currency: 'JPY',
-        image: imageUrl, // Use uploaded image URL
+        images: imageUrls,
         dataAiHint: `${values.name} vegetable`,
         createdAt: serverTimestamp(),
       });
@@ -135,15 +145,15 @@ export function ProductAddForm({ producerId }: ProductAddFormProps) {
         />
          <FormField
           control={form.control}
-          name="image"
+          name="images"
           render={({ field: { onChange, value, ...rest } }) => (
             <FormItem>
-              <FormLabel>商品画像</FormLabel>
+              <FormLabel>商品画像 ({MAX_FILES}枚まで)</FormLabel>
               <FormControl>
-                <Input type="file" accept="image/*" onChange={(e) => onChange(e.target.files)} {...rest} />
+                <Input type="file" accept="image/*" multiple onChange={(e) => onChange(e.target.files)} {...rest} />
               </FormControl>
               <FormDescription>
-                JPEG, PNG, WEBP形式の画像をアップロードできます (最大5MB)。
+                JPEG, PNG, WEBP形式の画像をアップロードできます (各5MBまで)。
               </FormDescription>
               <FormMessage />
             </FormItem>

@@ -22,7 +22,7 @@ const CreateOrderInputSchema = z.object({
         quantity: z.number(),
         price: z.number(),
         name: z.string(),
-        image: z.string(),
+        images: z.array(z.string()),
         dataAiHint: z.string().optional(),
       })
     )

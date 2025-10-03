@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import type { OrderItem } from '@/lib/types';
+
 
 export default function CheckoutPage() {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -41,16 +43,16 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     setError(null);
     try {
-      const orderItemsForFlow = cartItems.map(item => ({
+      const orderItemsForFlow: Omit<OrderItem, 'producerId'>[] = cartItems.map(item => ({
         id: item.id,
         quantity: item.quantity,
         price: item.price,
         name: item.name,
-        image: item.image,
+        images: item.images,
         dataAiHint: item.dataAiHint || ''
       }));
 
-      const orderId = await createOrder({ userId: user.uid, cartItems: orderItemsForFlow });
+      const orderId = await createOrder({ userId: user.uid, cartItems: orderItemsForFlow as OrderItem[] });
       toast({
         title: '注文が確定しました！',
         description: `ご注文ありがとうございます。注文番号: ${orderId}`,
@@ -106,10 +108,12 @@ export default function CheckoutPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {cartItems.map((item) => (
+                {cartItems.map((item) => {
+                  const imageUrl = (item.images && item.images.length > 0) ? item.images[0] : `https://placehold.co/64x64?text=${item.name}`;
+                  return (
                   <div key={item.id} className="flex items-center gap-4">
                     <Image
-                      src={item.image}
+                      src={imageUrl}
                       alt={item.name}
                       width={64}
                       height={64}
@@ -126,7 +130,7 @@ export default function CheckoutPage() {
                       {(item.price * item.quantity).toFixed(0)}円
                     </p>
                   </div>
-                ))}
+                )})}
               </div>
               <Separator className="my-4" />
               <div className="space-y-2">

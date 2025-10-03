@@ -76,11 +76,13 @@ function OrderItem({ order }: { order: Order }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {order.orderItems.map((item) => (
+              {order.orderItems.map((item) => {
+                const imageUrl = (item.images && item.images.length > 0) ? item.images[0] : `https://placehold.co/50x50?text=${item.name}`;
+                return (
                 <TableRow key={item.id}>
                   <TableCell className="hidden sm:table-cell">
                     <Image
-                      src={item.image}
+                      src={imageUrl}
                       alt={item.name}
                       width={50}
                       height={50}
@@ -94,7 +96,7 @@ function OrderItem({ order }: { order: Order }) {
                     {(item.price * item.quantity).toFixed(0)}円
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
         </AccordionContent>

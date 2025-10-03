@@ -17,13 +17,15 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const availability = product.stock > 0 ? '在庫あり' : '在庫切れ';
+  const imageUrl = (product.images && product.images.length > 0) ? product.images[0] : `https://placehold.co/600x400?text=${product.name}`;
+
   return (
     <Link href={`/product/${product.id}`} className="group">
       <Card className="flex h-full transform flex-col overflow-hidden transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg">
         <CardHeader className="p-0">
           <div className="relative h-48 w-full">
             <Image
-              src={product.image}
+              src={imageUrl}
               alt={product.name}
               fill
               className="object-cover"
