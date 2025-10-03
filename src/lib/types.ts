@@ -15,7 +15,7 @@ export interface Product {
   description: string;
   price: number;
   currency: 'USD' | 'JPY';
-  image: string;
+  images: string[];
   category: '葉物野菜' | '根菜' | 'アブラナ科' | '果菜';
   producerId: string;
   origin: string;
@@ -33,7 +33,7 @@ export interface OrderItem {
   name: string;
   price: number;
   quantity: number;
-  image: string;
+  images: string[];
   dataAiHint?: string;
   producerId: string;
 }

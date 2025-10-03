@@ -50,11 +50,13 @@ export default function CartPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {cartItems.map((item) => (
+                    {cartItems.map((item) => {
+                      const imageUrl = (item.images && item.images.length > 0) ? item.images[0] : `https://placehold.co/64x64?text=${item.name}`;
+                      return (
                       <TableRow key={item.id}>
                         <TableCell className="hidden md:table-cell">
                           <Image
-                            src={item.image}
+                            src={imageUrl}
                             alt={item.name}
                             width={64}
                             height={64}
@@ -92,7 +94,7 @@ export default function CartPage() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )})}
                   </TableBody>
                 </Table>
               </CardContent>
