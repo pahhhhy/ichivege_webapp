@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Product } from '@/lib/types';
@@ -17,7 +18,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const availability = product.stock > 0 ? '在庫あり' : '在庫切れ';
-  const imageUrl = (product.images && product.images.length > 0) ? product.images[0] : `https://placehold.co/600x400?text=${product.name}`;
+  const imageUrl = product.image ? product.image : `https://placehold.co/600x400?text=${product.name}`;
 
   return (
     <Link href={`/product/${product.id}`} className="group">

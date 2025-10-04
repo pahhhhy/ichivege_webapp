@@ -51,7 +51,7 @@ export default function CartPage() {
                   </TableHeader>
                   <TableBody>
                     {cartItems.map((item) => {
-                      const imageUrl = (item.images && item.images.length > 0) ? item.images[0] : `https://placehold.co/64x64?text=${item.name}`;
+                      const imageUrl = item.image ? item.image : `https://placehold.co/64x64?text=${item.name}`;
                       return (
                       <TableRow key={item.id}>
                         <TableCell className="hidden md:table-cell">

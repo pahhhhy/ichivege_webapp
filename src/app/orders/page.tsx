@@ -16,13 +16,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { History } from 'lucide-react';
+import { History, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DownloadPdfButton } from '@/components/pdf-document';
 
 function OrderItem({ order }: { order: Order }) {
   const [formattedDate, setFormattedDate] = useState('');
@@ -53,6 +54,11 @@ function OrderItem({ order }: { order: Order }) {
         </div>
       </AccordionTrigger>
       <AccordionContent>
+        <div className="mb-4 flex items-center justify-end gap-2">
+            <DownloadPdfButton order={order} documentType="invoice" />
+            <DownloadPdfButton order={order} documentType="delivery" />
+            <DownloadPdfButton order={order} documentType="receipt" />
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -64,7 +70,7 @@ function OrderItem({ order }: { order: Order }) {
           </TableHeader>
           <TableBody>
             {order.orderItems.map((item) => {
-              const imageUrl = (item.images && item.images.length > 0) ? item.images[0] : `https://placehold.co/50x50?text=${item.name}`;
+              const imageUrl = item.image ? item.image : `https://placehold.co/50x50?text=${item.name}`;
               return (
               <TableRow key={item.id}>
                 <TableCell className="hidden sm:table-cell">

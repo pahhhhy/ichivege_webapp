@@ -13,13 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -95,40 +88,20 @@ export default function ProductPage() {
   }
   
   const availability = product.stock > 0 ? '在庫あり' : '在庫切れ';
+  const imageUrl = product.image ? product.image : `https://placehold.co/600x600?text=${product.name}`;
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12">
       <div className="grid gap-8 md:grid-cols-2">
-        <Carousel className="w-full">
-            <CarouselContent>
-            {(product.images && product.images.length > 0) ? product.images.map((image, index) => (
-                <CarouselItem key={index}>
-                <div className="relative aspect-square w-full overflow-hidden rounded-lg shadow-lg">
-                    <Image
-                        src={image}
-                        alt={`${product.name} - 画像 ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        data-ai-hint={product.dataAiHint}
-                    />
-                </div>
-                </CarouselItem>
-            )) : (
-                <CarouselItem>
-                    <div className="relative aspect-square w-full overflow-hidden rounded-lg shadow-lg bg-muted">
-                         <Image
-                            src={`https://placehold.co/600x600?text=${product.name}`}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
-                </CarouselItem>
-            )}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-        </Carousel>
+        <div className="relative aspect-square w-full overflow-hidden rounded-lg shadow-lg bg-muted">
+            <Image
+                src={imageUrl}
+                alt={product.name}
+                fill
+                className="object-cover"
+                data-ai-hint={product.dataAiHint}
+            />
+        </div>
         <div className="flex flex-col justify-center">
           <h1 className="font-headline text-4xl font-bold">{product.name}</h1>
           <p className="mt-2 text-2xl font-semibold text-primary">
