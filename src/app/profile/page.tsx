@@ -2,7 +2,7 @@
 'use client';
 
 import { useAuth } from '@/context/auth-context';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import {
   Card,
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, Phone, UserCog, MapPin, Building, Loader2 } from 'lucide-react';
+import { History, Phone, UserCog, MapPin, Building, Loader2, FileText } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -36,6 +36,7 @@ import { ProfileEditDialog } from '@/components/profile-edit-dialog';
 import { LineConnectButton } from '@/components/line-connect-button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { DownloadPdfButton } from '@/components/pdf-document';
 
 
 function OrderItem({ order }: { order: Order }) {
@@ -66,6 +67,11 @@ function OrderItem({ order }: { order: Order }) {
           </div>
         </AccordionTrigger>
         <AccordionContent>
+          <div className="mb-4 flex items-center justify-end gap-2">
+            <DownloadPdfButton order={order} documentType="invoice" />
+            <DownloadPdfButton order={order} documentType="delivery" />
+            <DownloadPdfButton order={order} documentType="receipt" />
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -77,7 +83,7 @@ function OrderItem({ order }: { order: Order }) {
             </TableHeader>
             <TableBody>
               {order.orderItems.map((item) => {
-                const imageUrl = (item.images && item.images.length > 0) ? item.images[0] : `https://placehold.co/50x50?text=${item.name}`;
+                const imageUrl = item.image ? item.image : `https://placehold.co/50x50?text=${item.name}`;
                 return (
                 <TableRow key={item.id}>
                   <TableCell className="hidden sm:table-cell">
@@ -108,6 +114,7 @@ function OrderItem({ order }: { order: Order }) {
 function ProfilePageContent() {
   const { user, userProfile, loading, refreshUserProfile, isRefreshing } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -127,10 +134,9 @@ function ProfilePageContent() {
         description: 'LINEとの連携が完了しました。',
       });
       refreshUserProfile();
-      // URLからクエリパラメータを削除してクリーンな状態にする
-      router.replace('/profile', { scroll: false });
+      router.replace(pathname);
     }
-  }, [searchParams, refreshUserProfile, router, toast]);
+  }, [searchParams, refreshUserProfile, router, toast, pathname]);
 
   useEffect(() => {
     if (!user) {

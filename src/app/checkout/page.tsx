@@ -48,7 +48,7 @@ export default function CheckoutPage() {
         quantity: item.quantity,
         price: item.price,
         name: item.name,
-        images: item.images,
+        image: item.image,
         dataAiHint: item.dataAiHint || ''
       }));
 
@@ -109,7 +109,7 @@ export default function CheckoutPage() {
             <CardContent>
               <div className="space-y-4">
                 {cartItems.map((item) => {
-                  const imageUrl = (item.images && item.images.length > 0) ? item.images[0] : `https://placehold.co/64x64?text=${item.name}`;
+                  const imageUrl = item.image ? item.image : `https://placehold.co/64x64?text=${item.name}`;
                   return (
                   <div key={item.id} className="flex items-center gap-4">
                     <Image
